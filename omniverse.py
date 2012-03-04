@@ -498,7 +498,7 @@ try:
 	logger.setLevel(logging.DEBUG)
 	
 	# create file handler which logs even debug messages
-	fh = logging.handlers.RotatingFileHandler('comix.log', backupCount=5)
+	fh = logging.handlers.RotatingFileHandler('log\\omniverse.log', backupCount=5)
 	fh.setLevel(logging.DEBUG)
 	
 	ch = logging.StreamHandler()
