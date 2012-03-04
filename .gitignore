@@ -1,3 +1,7 @@
+# ignore my config.ini until I decide on a better way to implement. 
+# no need to share my usenet login ;)
+config.ini
+
 # Compiled source #
 ###################
 *.com
