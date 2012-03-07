@@ -1,6 +1,6 @@
 
+## Python Standard Library
 import nntplib
-import nntplib_ssl
 import datetime
 import time, calendar
 import cgi
@@ -11,13 +11,19 @@ import sys
 import threading
 import sqlite3
 import itertools
-import db
-import re
-import parse
-import ConfigParser
-import cherrypy
-import server
 import ssl
+import ConfigParser
+import re
+import ssl
+
+## installed packages
+import cherypy
+
+## local modules
+import nntplib_ssl
+import db
+import parse
+import web
 
 ## Configuration manager
 ## TODO: refactor this into a seperate module or class.
@@ -36,6 +42,8 @@ def config():
 			_config.set("NNTP", "group.1", "alt.binaries.comics.british")
 			_config.set("NNTP", "group.2", "alt.binaries.comics.dcp")
 			_config.set("NNTP", "group.3", "alt.binaries.comics.reposts")
+
+			_
 
 	return _config
 			
@@ -475,7 +483,7 @@ def main():
 
 	threading.Thread(group=None, 
 		target=cherrypy.quickstart, 
-		args = [server.HelloWorld()]).start()
+		args = [web.HelloWorld()]).start()
 
 	try:
 		while True:
