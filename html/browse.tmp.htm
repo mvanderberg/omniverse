@@ -1,0 +1,24 @@
+<%inherit file="/main.tmp.htm" />
+
+<form action="browse">
+	Search: <input type="text" name="query" /> <input type="submit" value="Go" />
+</form>
+
+<table>
+	<tr><td>Subject</td><td>Filename</td><td>Complete?</td></tr>
+    % for result in result_set:
+        ${makerow(result)}
+    % endfor
+</table>
+
+% for page in range(pg, pg+11):
+	<a href="?pg=${page}&sz=${sz}&query=${query}">${page}</a>
+% endfor
+
+<%def name="makerow(result)">
+<%
+	(rowid, subject, parts, total_parts, complete, filename, poster, date_posted, size, yenc) = result
+%>
+<tr><td>${subject}</td><td>${filename}</td><td>${complete}</td></tr>
+</%def>
+

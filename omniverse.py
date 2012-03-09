@@ -8,22 +8,24 @@ import pickle
 import logging
 import logging.handlers
 import sys
-import threading
-import sqlite3
 import itertools
 import ssl
 import ConfigParser
 import re
 import ssl
+import os
+import threading
 
 ## installed packages
-import cherypy
+import cherrypy
+import mako
 
 ## local modules
 import nntplib_ssl
 import db
 import parse
 import web
+import threads
 
 ## Configuration manager
 ## TODO: refactor this into a seperate module or class.
@@ -43,26 +45,11 @@ def config():
 			_config.set("NNTP", "group.2", "alt.binaries.comics.dcp")
 			_config.set("NNTP", "group.3", "alt.binaries.comics.reposts")
 
-			_
+			
 
 	return _config
 			
 config()
-
-class LockedIterator(object):
-    
-    def __init__(self, it):
-        self.lock = threading.Lock()
-        self.it = it.__iter__()
-
-    def __iter__(self): return self
-
-    def next(self):
-        self.lock.acquire()
-        try:
-            return self.it.next()
-        finally:
-            self.lock.release()
 
 def datetime_to_seconds(date):
 
@@ -80,10 +67,11 @@ def datetime_to_seconds(date):
 	time_tuple = date_obj.timetuple()
 	return calendar.timegm(time_tuple)
 
-class ArticleWorker(threading.Thread):
+class ArticleWorker(threads.MyThread):
 
 	def __init__(self, parent):
 		threading.Thread.__init__(self)
+		self.name = "ArticleWorker-%d" % hash(self)
 		self.ev = threading.Event()
 		self.parent = parent
 		self.connection = None
@@ -115,13 +103,9 @@ class ArticleWorker(threading.Thread):
 					try:
 						self.connection.commit()
 						self.count = 0
-					except sqlite3.OperationalError, e: 
-						if str(e) == "database is locked":
-							logging.getLogger().info("Unable to commit because the database is locked.")
-							
-						else:
-							logging.getLogger().info("Can't commit but not sure why.")
-							self.count -= 500
+					except Exception, e: 
+						logging.getLogger().info("Can't commit: %s" % str(e))
+						self.count -= 500
 
 			except StopIteration, e:
 				if self.parent.isAlive():
@@ -136,6 +120,10 @@ class ArticleWorker(threading.Thread):
 		if parse.bad_filter(subject):
 			logging.getLogger().info("Looks Spammy: %s" % subject)
 			return False
+
+		subject = subject.decode('utf-8')
+		_from = _from.decode('utf-8')
+		message_id = message_id.decode('utf-8')
 
 		subject_similar = parse.subject_to_similar(subject)
 		part_num, total_parts = parse.subject_to_totals(subject)
@@ -185,13 +173,13 @@ class ArticleWorker(threading.Thread):
 
 
 
-class ArticleProducer(threading.Thread):
+class ArticleProducer(threads.MyThread):
 
 	def __init__(self):
-		
 		threading.Thread.__init__(self)
+		self.name = "ArticleProducer-%d" % hash(self)
 		self.ev = threading.Event()
-		self.headers = LockedIterator([].__iter__())
+		self.headers = threads.LockedIterator([].__iter__())
 		self.headers_size = 0
 		self.connection = None
 		self.CANCEL = False
@@ -338,7 +326,7 @@ class ArticleProducer(threading.Thread):
 				
 				# TODO this should be locked I'm sure...
 				self.headers = itertools.chain(self.headers, 
-													LockedIterator(itertools.izip(subjects, froms, message_ids, dates, lines)))
+													threads.LockedIterator(itertools.izip(subjects, froms, message_ids, dates, lines)))
 				self.headers_size += len(subjects)
 
 				config().set("NNTP", "server.%d.group.%d" % (server_index, group_index), "(%s:%d)" % (group, high + 1) )
@@ -430,6 +418,11 @@ class File:
 
 def startup():
 
+	try:
+		os.mkdir("db")
+	except OSError, e:
+		pass # directory exists
+
 	db.setup()
 
 	logging.getLogger().info("Checking database integrity.")
@@ -448,7 +441,7 @@ def shutdown():
 				logging.getLogger().info("Canceling thread %s." % thread.getName())
 				thread.cancel()
 			except AttributeError, e:
-				#logging.getLogger().info("%s does not have a method called shutdown()" % thread.getName())
+				#logging.getLogger().info("%s respone: %s" % (thread.getName(), str(e)))
 				pass
 
 	cherrypy.engine.exit()
@@ -477,6 +470,7 @@ def main():
 	#handler = FileHandler()
 
 	t = threading.Timer(5.0, start_article_download)
+	print t.name
 	t.start()
 	
 	cherrypy.server.socket_port = 8085
@@ -498,6 +492,8 @@ def main():
 	except KeyboardInterrupt, e:
 		SIGNAL = 'shutdown'
 		shutdown()
+
+	logging.getLogger().info("Main thread finished.")
 
 SIGNAL = None
 
