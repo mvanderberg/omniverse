@@ -15,9 +15,10 @@ import ssl
 import ConfigParser
 import re
 import ssl
+import os
 
 ## installed packages
-import cherypy
+import cherrypy
 
 ## local modules
 import nntplib_ssl
@@ -36,15 +37,22 @@ def config():
 		_config = ConfigParser.SafeConfigParser()
 		_config.read('config.ini')
 
-		if len(_config.defaults().keys()) == 0 and len(_config.sections()) == 0:
+		if not _config.has_section("NNTP"):
 			_config.add_section("NNTP")
-			_config.set("NNTP", "group.0", "alt.binaries.comics")
-			_config.set("NNTP", "group.1", "alt.binaries.comics.british")
-			_config.set("NNTP", "group.2", "alt.binaries.comics.dcp")
-			_config.set("NNTP", "group.3", "alt.binaries.comics.reposts")
+			_config.set("NNTP", "server.0.enabled", "1")
+			_config.set("NNTP", "server.0.host", "none.nowhere.com")
+			_config.set("NNTP", "server.0.port", "443")
+			_config.set("NNTP", "server.0.username", "your_username")
+			_config.set("NNTP", "server.0.password", "your_password")
+			_config.set("NNTP", "server.0.ssl", "1")
+			_config.set("NNTP", "server.0.group.0", "alt.binaries.comics:0")
+			_config.set("NNTP", "server.0.group.1", "alt.binaries.comics.reposts:0")
 
-			_
+			with open('config.ini', 'wb') as configfile:
+			    _config.write(configfile)
 
+			print "*** Update config.ini file with your information and re-execute omniverse."
+			sys.exit(1)
 	return _config
 			
 config()
@@ -282,6 +290,9 @@ class ArticleProducer(threading.Thread):
 			except ConfigParser.NoOptionError, e:
 				logging.getLogger().info("No more servers to process.")
 				break
+			except ConfigParser.NoSectionError, e:
+				logging.getLogger().info("No server information setup. Use web interface to configure.")
+				break
 
 			group_index = 0
 
@@ -477,6 +488,7 @@ def main():
 	#handler = FileHandler()
 
 	t = threading.Timer(5.0, start_article_download)
+	t.setName("[Initiate Article Download Timer Thread]")
 	t.start()
 	
 	cherrypy.server.socket_port = 8085
@@ -502,6 +514,17 @@ def main():
 SIGNAL = None
 
 try:
+
+	try:
+		os.mkdir('db')
+	except OSError:
+		pass #database directory already exists
+	
+	try:
+		os.mkdir('log')
+	except OSError:
+		pass #log directory already exists
+
 	logger = logging.getLogger()
 	logger.setLevel(logging.DEBUG)
 	

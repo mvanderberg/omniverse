@@ -73,6 +73,11 @@ class MultiThreadOK(threading.Thread):
     def commit(self):
     	self.execute('--commit--')
 
-c = MultiThreadOK(DB_FILE)
+c = None
 def connect():
+    
+    global c
+
+    if not c:
+        c = MultiThreadOK(DB_FILE)
 	return c
