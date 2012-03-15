@@ -45,8 +45,8 @@ def config():
 			_config.set("NNTP", "server.0.username", "your_username")
 			_config.set("NNTP", "server.0.password", "your_password")
 			_config.set("NNTP", "server.0.ssl", "1")
-			_config.set("NNTP", "server.0.group.0", "alt.binaries.comics:0")
-			_config.set("NNTP", "server.0.group.1", "alt.binaries.comics.reposts:0")
+			_config.set("NNTP", "server.0.group.0", "(alt.binaries.comics:0)")
+			_config.set("NNTP", "server.0.group.1", "(alt.binaries.comics.reposts:0)")
 
 			with open('config.ini', 'wb') as configfile:
 			    _config.write(configfile)
