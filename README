@@ -1,1 +1,29 @@
 OmniVerse - Automatic downloader for comic books (cbr, cbz, etc) in the tradition of Sickbeard.
+
+
+Some things to be aware of:
+
+* This isn't a user-friendly version or even a useful version. This release is for me to get familiar with working with git and lets people test if the header download portion is working with different usenet providers.
+
+* Requires Python. I'm using Python 2.7. It may be compatible with an earlier version but I have not tested it. I doubt its compatible with Python 3.0. I may migrate at a later date but for now I'm sticking with 2.7.
+
+* To run the program, use python to run omniverse.py. The first time it runs, it will save a file called config.ini in the directory then quit. Edit the config.ini file with your nntp server information. Should be self explanatory. Username, password, a 0 or a 1 for SSL, host, and port. Also there are places for what usenet newsgroups to scan. Two newsgroups are provided but you can add more. Make sure any newsgroups added following the numbering of the others in the example (0 for the first one, 1 for the second, etc).
+
+* Run again to start the server. 
+
+* Once the server gets started, you should see logging information about what headers are being downloaded. IMPORTANT: The subject lines may be NSFW or NSFL for that matter. The same goes for the web interface and the produced log file. As I'm sure we all know, there's plenty of spam on usenet. One my goals is to write a better spam/porn filter and then those messages should go away.
+
+* To access the web interface, browse to http://localhost:8085. The web interface should be improved soon.
+
+* To quit the server and shut everything down use CTRL+C. It should quit cleanly and return to the command-line. If after a couple of minutes it doesn't, use process explorer to kill.
+
+* If you see anything wrong or have trouble with your particular flavor of usenet provider please submit an issue through github (see the tab marked Issues on the omniverse main page of github).
+
+* Also, if you use a block account this project works by downloading headers so depending on your provider this program may impact your monthly or block quota. I don't have exact numbers yet but I don't think its a large amount. 
+
+* Another thing to make sure of is to take a connection away from Sabnzb+. For example, if you provider gives you 20 connections, you'll want to change the connections to 19 in Sabnzb+ so there is no conflict.
+
+Phew. I don't think I left out anything. Thanks for everyone's encouragement. I should have more up later in the week. I've setup a [twitter account](https://twitter.com/#!/omniverse2) so you can send me any comments, rants, raves, or suggestions.
+
+Thanks again everyone!
+404
