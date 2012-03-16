@@ -233,13 +233,13 @@ class ArticleProducer(threading.Thread):
 		self.headers_size -= 1
 		return obj
 
-	def connect(self, host, port, username, password, ssl = None, retry = 5):
+	def connect(self, host, port, username, password, is_ssl = None, retry = 5):
 
 		if retry == 0: return None
 
 		try:
 			logging.getLogger().info("Creating a new connection.")
-			if ssl:
+			if is_ssl:
 				self.connection = nntplib_ssl.NNTP_SSL(host, port, username, password)
 				logging.getLogger().info("(%s:%s,SSL): %s." % (host, port, self.connection.getwelcome()[:20]) )
 			else:
@@ -254,24 +254,24 @@ class ArticleProducer(threading.Thread):
 				logging.getLogger().error("NNTPPermanentError: %s" % msg)
 			self.ev.wait(60)
 			logging.getLogger().info("Retrying connection.")
-			return self.connect(host, port, username, password, retry - 1)
+			return self.connect(host, port, username, password, is_ssl, retry - 1)
 		
 		except nntplib.NNTPTemporaryError, msg:
 			logging.getLogger().error("NNTPTemporaryError: %s" % msg)
 			self.ev.wait(60)
 			logging.getLogger().info("Retrying connection.")
-			return self.connect(host, port, username, password, retry - 1)
+			return self.connect(host, port, username, password, is_ssl, retry - 1)
 		
 		except nntplib.NNTPError, msg:
 			logging.getLogger().error("NNTP ERROR: %s" % msg)
 			self.ev.wait(60)
 			logging.getLogger().info("Retrying connection.")
-			return self.connect(host, port, username, password, ssl, retry - 1)
+			return self.connect(host, port, username, password, is_ssl, retry - 1)
 		except nntplib.NNTPProtocolError, msg:
 			logging.getLogger().error("NNTP Protocol Error: %s" % msg)
 			self.ev.wait(60)
 			logging.getLogger().info("Retrying connection.")
-			return self.connect(host, port, username, password, ssl, retry - 1)
+			return self.connect(host, port, username, password, is_ssl, retry - 1)
 		
 	def run(self):
 
@@ -286,7 +286,7 @@ class ArticleProducer(threading.Thread):
 				port = config().getint("NNTP", "server.%d.port" % server_index)
 				username = config().get("NNTP", "server.%d.username" % server_index)
 				password = config().get("NNTP", "server.%d.password" % server_index)
-				ssl = config().get("NNTP", "server.%d.ssl" % server_index) == "1"
+				is_ssl = config().get("NNTP", "server.%d.ssl" % server_index) == "1"
 			except ConfigParser.NoOptionError, e:
 				logging.getLogger().info("No more servers to process.")
 				break
@@ -306,7 +306,7 @@ class ArticleProducer(threading.Thread):
 					logging.getLogger().info("No more groups to process for this server.")
 					break
 
-				self.connect(host, port, username, password, ssl)
+				self.connect(host, port, username, password, is_ssl)
 
 				(response, count, first, last, name) = self.connection.group(group)
 				logging.getLogger().info('Selecting group %s' % group)
