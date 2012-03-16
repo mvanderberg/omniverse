@@ -311,7 +311,7 @@ class ArticleProducer(threading.Thread):
 				try:
 					(response, count, first, last, name) = self.connection.group(group)
 				except nntplib.NNTPTemporaryError, e:
-					logging.getLogger().error("Failed to select newsgroup %s. Provider response: %s", (group, str(e)))
+					logging.getLogger().error("Failed to select newsgroup %s. Provider response: %s" % (group, str(e)))
 					group_index += 1
 					continue
 
