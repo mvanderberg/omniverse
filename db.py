@@ -2,6 +2,7 @@ import sqlite3
 import sys
 import threading
 import Queue
+import logging
 
 DB_FILE = "db\\headers.db"
 connection = None
@@ -36,17 +37,21 @@ def setup():
 
 class MultiThreadOK(threading.Thread):
     def __init__(self, db):
-        super(MultiThreadOK, self).__init__()
+        super(MultiThreadOK, self).__init__(name="Database Thread")
         self.db=db
         self.CANCEL = False
         self.reqs=Queue.Queue()
         self.start()
     def run(self):
         cnx = sqlite3.connect(self.db) 
-        cnx.text_factory = str
+        cnx.text_factory = sqlite3.OptimizedUnicode
         cursor = cnx.cursor()
         while not self.CANCEL:
-            req, arg, res = self.reqs.get()
+            try:
+                req, arg, res = self.reqs.get(timeout=10)
+            except Queue.Empty:
+                continue
+                
             if req=='--close--': break
             if req=='--commit--':
             	cnx.commit()
@@ -58,7 +63,8 @@ class MultiThreadOK(threading.Thread):
                 res.put('--no more--')
         cnx.close()
     def cancel(self):
-		self.CANCEL = True
+        logging.getLogger().info("%s will finish canceling after processing approximately %d items." % (self.name, self.reqs.qsize()))
+        self.CANCEL = True
     def execute(self, req, arg=None, res=None):
         self.reqs.put((req, arg or tuple(), res))
     def select(self, req, arg=None):
@@ -73,11 +79,6 @@ class MultiThreadOK(threading.Thread):
     def commit(self):
     	self.execute('--commit--')
 
-c = None
+c = MultiThreadOK(DB_FILE)
 def connect():
-    
-    global c
-
-    if not c:
-        c = MultiThreadOK(DB_FILE)
 	return c

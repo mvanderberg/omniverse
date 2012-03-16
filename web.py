@@ -3,7 +3,7 @@ import db
 
 class HelloWorld:
 
-    def index(self, pg=1, sz=500):
+    def index(self, pg=1, sz=500, query=""):
         return self.browse(pg, sz)
 
     def status(self):
@@ -46,7 +46,7 @@ class HelloWorld:
 
 
         for page in range(pg, pg + 11):
-            html.append("<a href=\"?pg=%d&sz=%d&query=%s\">%d</a>&nbsp;" % (page, sz, page, query))
+            html.append("<a href=\"?pg=%d&sz=%d&query=%s\">%d</a>&nbsp;" % (page, sz, query, page))
 
         html.append("</body></html>")
 

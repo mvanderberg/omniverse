@@ -491,6 +491,7 @@ def main():
 	t.setName("[Initiate Article Download Timer Thread]")
 	t.start()
 	
+	cherrypy.engine.autoreload.unsubscribe()
 	cherrypy.server.socket_port = 8085
 
 	threading.Thread(group=None, 
