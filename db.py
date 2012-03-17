@@ -4,6 +4,9 @@ import threading
 import Queue
 import logging
 
+## local modules
+import threads
+
 DB_FILE = "db\\headers.db"
 connection = None
 
@@ -35,7 +38,7 @@ def setup():
 		sys.exit(1)
 
 
-class MultiThreadOK(threading.Thread):
+class MultiThreadOK(threads.MyThread):
     def __init__(self, db):
         super(MultiThreadOK, self).__init__(name="Database Thread")
         self.db=db
