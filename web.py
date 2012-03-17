@@ -24,29 +24,34 @@ class HelloWorld:
             sz = 500
             pg = 1
 
-        from mako.template import Template
-        from mako.lookup import TemplateLookup
-    
-        mytemplate = Template(
-            filename='html/browse.tmp.htm',output_encoding='utf-8',encoding_errors='ignore', 
-            lookup= TemplateLookup(
-                directories=['html'],
-                output_encoding='utf-8',
-                input_encoding='utf-8', 
-                encoding_errors='replace'))
-        # mytemplate = Template(
-        #     filename='html/browse.tmp.htm', lookup= TemplateLookup(directories=['html'],disable_unicode=True))
-
         connection = db.connect()
 
      	result_set = connection.select(
             "SELECT rowid, * FROM articles WHERE filename LIKE ? ORDER BY filename LIMIT ? OFFSET ?", 
                 ("%" + query + "%", sz, (pg - 1) * sz))
 
-        return mytemplate.render(result_set = result_set, pg = pg, sz = sz, query = query)
+        return load_template('./html/browse.tmp.htm').render(result_set = result_set, pg = pg, sz = sz, query = query)
 
+    def settings(self):
+        pass
+        
     index.exposed = True
     browse.exposed = True
     status.exposed = True
+    settings.exposed = True
+
+def load_template(filename):
+
+    from mako.template import Template
+    from mako.lookup import TemplateLookup
+
+    return Template(
+            filename=filename,output_encoding='utf-8',encoding_errors='replace', 
+            lookup= TemplateLookup(
+                directories=['./html'],
+                output_encoding='utf-8',
+                input_encoding='utf-8', 
+                encoding_errors='replace'))
+
 
 

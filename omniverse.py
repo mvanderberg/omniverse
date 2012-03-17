@@ -67,6 +67,14 @@ def datetime_to_seconds(date):
 	time_tuple = date_obj.timetuple()
 	return calendar.timegm(time_tuple)
 
+def utf_decode(string_to_decode):
+
+	try:
+		return string_to_decode.decode('utf-8', 'replace')
+	except UnicodeDecodeError, e:
+		logging.getLogger().error("Unicode decode error while decoding %s. Error message: %s" % (repr(string_to_decode), str(e)))
+		raise e	
+
 class ArticleWorker(threads.MyThread):
 
 	def __init__(self, parent):
@@ -121,9 +129,12 @@ class ArticleWorker(threads.MyThread):
 			logging.getLogger().info("Looks Spammy: %s" % subject)
 			return False
 
-		subject = subject.decode('utf-8')
-		_from = _from.decode('utf-8')
-		message_id = message_id.decode('utf-8')
+		try:
+			subject = utf_decode(subject)
+			_from = utf_decode(_from)
+			message_id = utf_decode(message_id)
+		except UnicodeDecodeError, e:
+			return False
 
 		subject_similar = parse.subject_to_similar(subject)
 		part_num, total_parts = parse.subject_to_totals(subject)
@@ -473,6 +484,7 @@ def main():
 	print t.name
 	t.start()
 	
+	cherrypy.engine.autoreload.unsubscribe()
 	cherrypy.server.socket_port = 8085
 
 	threading.Thread(group=None, 
