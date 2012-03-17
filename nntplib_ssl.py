@@ -36,7 +36,13 @@ class NNTP_SSL(nntplib.NNTP):
         self.buffer = ""
         msg = "getaddrinfo returns an empty list"
         self.sock = None
-        for res in socket.getaddrinfo(self.host, self.port, 0, socket.SOCK_STREAM):
+        
+        try:
+            results = socket.getaddrinfo(self.host, self.port, 0, socket.SOCK_STREAM)
+        except socket.gaierror, e:
+            raise IOError(e)
+
+        for res in results:
             af, socktype, proto, canonname, sa = res
             try:
                 self.sock = socket.socket(af, socktype, proto)
