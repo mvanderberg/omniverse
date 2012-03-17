@@ -245,24 +245,29 @@ class ArticleProducer(threads.MyThread):
 				logging.getLogger().error("NNTPPermanentError: %s" % msg)
 			self.ev.wait(60)
 			logging.getLogger().info("Retrying connection.")
-			return self.connect(host, port, username, password, retry - 1)
+			return self.connect(host, port, username, password, is_ssl, retry - 1)
 		
 		except nntplib.NNTPTemporaryError, msg:
 			logging.getLogger().error("NNTPTemporaryError: %s" % msg)
 			self.ev.wait(60)
 			logging.getLogger().info("Retrying connection.")
-			return self.connect(host, port, username, password, retry - 1)
+			return self.connect(host, port, username, password, is_ssl, retry - 1)
 		
 		except nntplib.NNTPError, msg:
 			logging.getLogger().error("NNTP ERROR: %s" % msg)
 			self.ev.wait(60)
 			logging.getLogger().info("Retrying connection.")
-			return self.connect(host, port, username, password, ssl, retry - 1)
+			return self.connect(host, port, username, password, is_ssl, retry - 1)
 		except nntplib.NNTPProtocolError, msg:
 			logging.getLogger().error("NNTP Protocol Error: %s" % msg)
 			self.ev.wait(60)
 			logging.getLogger().info("Retrying connection.")
-			return self.connect(host, port, username, password, ssl, retry - 1)
+			return self.connect(host, port, username, password, is_ssl, retry - 1)
+		except IOError, msg:
+			logging.getLogger().error("Socket Error: %s" % msg)
+			self.ev.wait(60)
+			logging.getLogger().info("Retrying connection.")
+			return self.connect(host, port, username, password, is_ssl, retry - 1)
 		
 	def run(self):
 
@@ -296,7 +301,15 @@ class ArticleProducer(threads.MyThread):
 
 				self.connect(host, port, username, password, is_ssl)
 
-				(response, count, first, last, name) = self.connection.group(group)
+				try:
+					(response, count, first, last, name) = self.connection.group(group)
+				except nntplib.NNTPTemporaryError, e:
+					logging.getLogger().error("Failed to select group %s. Server response: %s" %
+						(group, str(e)))
+					logging.getLogger().info("Skipping %s." % group)
+					group_index += 1
+					continue
+
 				logging.getLogger().info('Selecting group %s' % group)
 				logging.getLogger().info(name + ' has ' + count + ' articles, ' + first + ' - ' + last)
 
@@ -330,7 +343,7 @@ class ArticleProducer(threads.MyThread):
 					logging.getLogger().error(
 						"Failure in communication from %s. Error message: %s" % (host, str(e)))
 					continue
-				except IOERROR, e:
+				except IOError, e:
 					logging.getLogger().error(
 						"Failure in reading or writing from %s. Error message: %s" % (host, str(e)))
 					continue
