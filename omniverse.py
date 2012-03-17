@@ -19,7 +19,6 @@ import threading
 ## installed packages
 import cherrypy
 import mako
->>>>>>> my_branch
 
 ## local modules
 import nntplib_ssl
@@ -271,14 +270,11 @@ class ArticleProducer(threads.MyThread):
 			self.ev.wait(60)
 			logging.getLogger().info("Retrying connection.")
 			return self.connect(host, port, username, password, is_ssl, retry - 1)
-<<<<<<< HEAD
-=======
 		except IOError, msg:
 			logging.getLogger().error("Socket Error: %s" % msg)
 			self.ev.wait(60)
 			logging.getLogger().info("Retrying connection.")
 			return self.connect(host, port, username, password, is_ssl, retry - 1)
->>>>>>> my_branch
 		
 	def run(self):
 
@@ -318,13 +314,9 @@ class ArticleProducer(threads.MyThread):
 				try:
 					(response, count, first, last, name) = self.connection.group(group)
 				except nntplib.NNTPTemporaryError, e:
-<<<<<<< HEAD
-					logging.getLogger().error("Failed to select newsgroup %s. Provider response: %s" % (group, str(e)))
-=======
 					logging.getLogger().error("Failed to select group %s. Server response: %s" %
 						(group, str(e)))
 					logging.getLogger().info("Skipping %s." % group)
->>>>>>> my_branch
 					group_index += 1
 					continue
 
