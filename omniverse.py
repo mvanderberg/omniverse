@@ -244,29 +244,18 @@ class ArticleProducer(threads.MyThread):
 				self.connection = nntplib.NNTP(host, port, username, password)
 				logging.getLogger().info("(%s:%s): %s..." % (host, port, self.connection.getwelcome()[:20]) )
 			return self.connection
+		
+		except (nntplib.NNTPPermanentError, 
+				nntplib.NNTPTemporaryError,
+				nntplib.NNTPError,
+				nntplib.NNTPProtocolError), error:
 
-		except nntplib.NNTPPermanentError, msg:
-			if msg.startswith("502"):
+			logging.getLogger().error("NNTPError. Server response: %s" % error.message)
+
+			if error.message.startswith("502"):
 				logging.getLogger().error("Your per-user connection limit reached. Perhaps too many connections are being used by a program such as SABNZBD?")
 			else:
 				logging.getLogger().error("NNTPPermanentError: %s" % msg)
-			self.ev.wait(60)
-			logging.getLogger().info("Retrying connection.")
-			return self.connect(host, port, username, password, is_ssl, retry - 1)
-		
-		except nntplib.NNTPTemporaryError, msg:
-			logging.getLogger().error("NNTPTemporaryError: %s" % msg)
-			self.ev.wait(60)
-			logging.getLogger().info("Retrying connection.")
-			return self.connect(host, port, username, password, is_ssl, retry - 1)
-		
-		except nntplib.NNTPError, msg:
-			logging.getLogger().error("NNTP ERROR: %s" % msg)
-			self.ev.wait(60)
-			logging.getLogger().info("Retrying connection.")
-			return self.connect(host, port, username, password, is_ssl, retry - 1)
-		except nntplib.NNTPProtocolError, msg:
-			logging.getLogger().error("NNTP Protocol Error: %s" % msg)
 			self.ev.wait(60)
 			logging.getLogger().info("Retrying connection.")
 			return self.connect(host, port, username, password, is_ssl, retry - 1)
@@ -453,10 +442,15 @@ class File:
 def startup():
 
 	try:
-		os.mkdir("db")
+		os.mkdir("./db")
 	except OSError, e:
 		pass # directory exists
 
+	try:
+		os.mkdir("./log")
+	except OSError, e:
+		pass #directory exists
+		
 	db.setup()
 
 	logging.getLogger().info("Checking database integrity.")
