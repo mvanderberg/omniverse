@@ -37,14 +37,14 @@ import threads
 # if a directory doesn't exist, creates it and returns True
 def create_child_dir(dirname):
 	try:
-		os.mkdir(os.path.relpath(dirname))
+		os.mkdir(build_path(dirname))
 		return True
 	except OSError:
 		return False
 
 # creates a path to a file resource relative to the current working directory
-def create_path(*args):
-	return os.path.relpath(os.path.join(*args))
+def build_path(*args):
+	return os.path.join(os.path.abspath("."), *args)
 
 ## Configuration manager
 ## TODO: refactor this into a seperate module or class.
@@ -68,7 +68,7 @@ def config():
 			_config.set("NNTP", "server.0.group.0", "(alt.binaries.comics:0)")
 			_config.set("NNTP", "server.0.group.1", "(alt.binaries.comics.reposts:0)")
 
-			with open(create_path('config.ini'), 'wb') as configfile:
+			with open(build_path('config.ini'), 'wb') as configfile:
 			    _config.write(configfile)
 
 			print "*** Update config.ini file with your information and re-execute omniverse."
@@ -483,7 +483,7 @@ def shutdown():
 
 	cherrypy.engine.exit()
 
-	with open(create_path('config.ini'), "wb") as configfile:
+	with open(build_path('config.ini'), "wb") as configfile:
 		config().write(configfile)
 
 def start_article_download():
@@ -510,13 +510,18 @@ def main():
 	t.setName("[Initiate Article Download Timer Thread]")
 	t.start()
 	
+	config = {'/media':
+                {'tools.staticdir.on': True,
+                 'tools.staticdir.dir': build_path("html", "media"),
+                }
+             }
+
 	cherrypy.engine.autoreload.unsubscribe()
 	cherrypy.server.socket_port = 8085
+	cherrypy.tree.mount(web.RootPages(), '/', config=config)
+	cherrypy.engine.start()
 
-	threading.Thread(group=None, 
-		target=cherrypy.quickstart, 
-		args = [web.RootPages()]).start()
-
+	print "got here"
 	try:
 		while True:
 			if not SIGNAL:
@@ -535,30 +540,33 @@ def main():
 
 SIGNAL = None
 
-try:
+if __name__ == "__main__":
+	try:
 
-	create_child_dir('db')
-	create_child_dir('log')
+		create_child_dir('db')
+		create_child_dir('log')
 
-	logger = logging.getLogger()
-	logger.setLevel(logging.DEBUG)
-	
-	# create file handler which logs even debug messages
-	fh = logging.handlers.RotatingFileHandler(create_path('log', 'omniverse.log'), backupCount=5)
-	fh.setLevel(logging.DEBUG)
-	
-	ch = logging.StreamHandler()
-	
-	formatter = logging.Formatter('(%(levelname)s): %(message)s')
-	ch.setFormatter(formatter)
-	
-	formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')	
-	fh.setFormatter(formatter)
+		logger = logging.getLogger()
+		logger.setLevel(logging.DEBUG)
+		
+		# create file handler which logs even debug messages
+		fh = logging.handlers.RotatingFileHandler(build_path('log', 'omniverse.log'), backupCount=5)
+		fh.setLevel(logging.DEBUG)
+		
+		ch = logging.StreamHandler()
+		
+		formatter = logging.Formatter('(%(levelname)s): %(message)s')
+		ch.setFormatter(formatter)
+		
+		formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')	
+		fh.setFormatter(formatter)
 
-	# add the handlers to logger
-	logger.addHandler(ch)
-	logger.addHandler(fh)
-	logger.debug("Starting...")
-	main()
-except SystemExit, e:	
-	logging.getLogger().info("Shutting Down")
+		# add the handlers to logger
+		logger.addHandler(ch)
+		logger.addHandler(fh)
+		logger.debug("Starting...")
+		main()
+	except SystemExit, e:	
+		logging.getLogger().info("Shutting Down")
+    
+ 
