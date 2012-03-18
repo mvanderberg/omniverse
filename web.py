@@ -1,7 +1,21 @@
 import cherrypy
 import db
 
-class HelloWorld:
+class GroupPages:
+
+    def list(self, host, port, is_ssl, username, password, keyword="comics"):
+
+        conn = ArticleProducer().connect(host, port, is_ssl, username, password)
+        if conn is None:
+            return "Error: Failed to connect."
+        
+        groups = ["\t<group>" + group + "</group>\n" for group in conn.list() if keyword in group]
+
+        return "<groups>\n" + "".join(groups) + "</groups>"
+
+    list.exposed = True
+
+class RootPages:
 
     def index(self, pg=1, sz=500, query=""):
         return self.browse(pg, sz, query)
@@ -34,6 +48,8 @@ class HelloWorld:
 
     def settings(self):
         pass
+
+    groups = GroupPages()
         
     index.exposed = True
     browse.exposed = True
@@ -52,6 +68,3 @@ def load_template(filename):
                 output_encoding='utf-8',
                 input_encoding='utf-8', 
                 encoding_errors='replace'))
-
-
-

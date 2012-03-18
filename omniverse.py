@@ -14,6 +14,7 @@ import ConfigParser
 import re
 import ssl
 import os
+import os.path
 import threading
 
 ## installed packages
@@ -26,6 +27,24 @@ import db
 import parse
 import web
 import threads
+
+
+## File manipulation functions
+## Refactor to additional module
+
+# create a directory relative to the current working directory.
+# if a directory exists returns False
+# if a directory doesn't exist, creates it and returns True
+def create_child_dir(dirname):
+	try:
+		os.mkdir(os.path.relpath(dirname))
+		return True
+	except OSError:
+		return False
+
+# creates a path to a file resource relative to the current working directory
+def create_path(*args):
+	return os.path.relpath(os.path.join(*args))
 
 ## Configuration manager
 ## TODO: refactor this into a seperate module or class.
@@ -49,7 +68,7 @@ def config():
 			_config.set("NNTP", "server.0.group.0", "(alt.binaries.comics:0)")
 			_config.set("NNTP", "server.0.group.1", "(alt.binaries.comics.reposts:0)")
 
-			with open('config.ini', 'wb') as configfile:
+			with open(create_path('config.ini'), 'wb') as configfile:
 			    _config.write(configfile)
 
 			print "*** Update config.ini file with your information and re-execute omniverse."
@@ -441,16 +460,6 @@ class File:
 
 def startup():
 
-	try:
-		os.mkdir("./db")
-	except OSError, e:
-		pass # directory exists
-
-	try:
-		os.mkdir("./log")
-	except OSError, e:
-		pass #directory exists
-		
 	db.setup()
 
 	logging.getLogger().info("Checking database integrity.")
@@ -474,7 +483,7 @@ def shutdown():
 
 	cherrypy.engine.exit()
 
-	with open("config.ini", "wb") as configfile:
+	with open(create_path('config.ini'), "wb") as configfile:
 		config().write(configfile)
 
 def start_article_download():
@@ -506,7 +515,7 @@ def main():
 
 	threading.Thread(group=None, 
 		target=cherrypy.quickstart, 
-		args = [web.HelloWorld()]).start()
+		args = [web.RootPages()]).start()
 
 	try:
 		while True:
@@ -528,21 +537,14 @@ SIGNAL = None
 
 try:
 
-	try:
-		os.mkdir('db')
-	except OSError:
-		pass #database directory already exists
-	
-	try:
-		os.mkdir('log')
-	except OSError:
-		pass #log directory already exists
+	create_child_dir('db')
+	create_child_dir('log')
 
 	logger = logging.getLogger()
 	logger.setLevel(logging.DEBUG)
 	
 	# create file handler which logs even debug messages
-	fh = logging.handlers.RotatingFileHandler('log\\omniverse.log', backupCount=5)
+	fh = logging.handlers.RotatingFileHandler(create_path('log', 'omniverse.log'), backupCount=5)
 	fh.setLevel(logging.DEBUG)
 	
 	ch = logging.StreamHandler()
