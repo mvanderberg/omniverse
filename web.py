@@ -3,6 +3,7 @@ import db
 
 class GroupPages:
 
+    @cherrypy.expose
     def list(self, host, port, is_ssl, username, password, keyword="comics"):
 
         conn = ArticleProducer().connect(host, port, is_ssl, username, password)
@@ -13,18 +14,19 @@ class GroupPages:
 
         return "<groups>\n" + "".join(groups) + "</groups>"
 
-    list.exposed = True
-
 class RootPages:
 
+    @cherrypy.expose
     def index(self, pg=1, sz=500, query=""):
         return self.browse(pg, sz, query)
 
+    @cherrypy.expose
     def status(self):
         connection = db.connect()
         num_rows = connection.select("SELECT COUNT(*) as num_rows FROM articles WHERE filename LIKE '%cbr' OR filename LIKE '%cbz'").next()
         return "Number of records: %d" % num_rows
 
+    @cherrypy.expose
     def browse(self, pg=1, sz=500, query=""):
 
         try:
@@ -46,16 +48,12 @@ class RootPages:
 
         return load_template('./html/browse.tmp.htm').render(result_set = result_set, pg = pg, sz = sz, query = query)
 
+    @cherrypy.expose
     def settings(self):
         pass
 
     groups = GroupPages()
         
-    index.exposed = True
-    browse.exposed = True
-    status.exposed = True
-    settings.exposed = True
-
 def load_template(filename):
 
     from mako.template import Template
