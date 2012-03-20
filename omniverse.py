@@ -252,7 +252,7 @@ class ArticleProducer(threads.MyThread):
 
 	def connect(self, host, port, username, password, is_ssl = None, retry = 5):
 
-		if retry == 0: return None
+		if retry < 0: return None
 
 		try:
 			logging.getLogger().info("Creating a new connection.")
@@ -521,7 +521,6 @@ def main():
 	cherrypy.tree.mount(web.RootPages(), '/', config=config)
 	cherrypy.engine.start()
 
-	print "got here"
 	try:
 		while True:
 			if not SIGNAL:
