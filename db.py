@@ -8,43 +8,15 @@ import logging
 import threads
 
 DB_FILE = "db\\headers.db"
-connection = None
-
-def setup():
- 
-	global connection
-
-	try:
-		connection = sqlite3.connect(DB_FILE)
-		connection.execute(
-			'CREATE TABLE IF NOT EXISTS articles ' 
-				'(subject TEXT PRIMARY KEY, '
-				'parts TEXT, '
-				'total_parts INT, '
-				'complete TINYINT, '
-				'filename TEXT, '
-				'poster TEXT, '
-				'date_posted INT, '
-				'size INT, '
-				'yenc TINYINT)')
-
-		connection.execute(
-			'CREATE INDEX IF NOT EXISTS filename_asc ON articles (filename ASC)')
-		
-	except sqlite3.Error, e:
-		logging.getLoggger().severe("Database cannot be found or created. Error Message: %s. Cannot continue, quiting." % e)
-
-		#TODO a more graceful exit.
-		sys.exit(1)
-
 
 class MultiThreadOK(threads.MyThread):
-    def __init__(self, db):
+    def __init__(self, db, autostart=False):
         super(MultiThreadOK, self).__init__(name="Database Thread")
         self.db=db
         self.CANCEL = False
         self.reqs=Queue.Queue()
-        self.start()
+        if autostart:
+            self.start()
     def run(self):
         cnx = sqlite3.connect(self.db) 
         cnx.text_factory = sqlite3.OptimizedUnicode
@@ -57,8 +29,8 @@ class MultiThreadOK(threads.MyThread):
                 
             if req=='--close--': break
             if req=='--commit--':
-            	cnx.commit()
-            	continue
+                cnx.commit()
+                continue
             cursor.execute(req, arg)
             if res:
                 for rec in cursor:
@@ -80,8 +52,36 @@ class MultiThreadOK(threads.MyThread):
     def close(self):
         self.execute('--close--')
     def commit(self):
-    	self.execute('--commit--')
+        self.execute('--commit--')
 
-c = MultiThreadOK(DB_FILE)
+handler = MultiThreadOK(DB_FILE)
+
+def setup():
+ 
+	try:
+		connection = sqlite3.connect(DB_FILE)
+		connection.execute(
+			'CREATE TABLE IF NOT EXISTS articles ' 
+				'(subject TEXT PRIMARY KEY, '
+				'parts TEXT, '
+				'total_parts INT, '
+				'complete TINYINT, '
+				'filename TEXT, '
+				'poster TEXT, '
+				'date_posted INT, '
+				'size INT, '
+				'yenc TINYINT)')
+
+		connection.execute(
+			'CREATE INDEX IF NOT EXISTS filename_asc ON articles (filename ASC)')	
+
+	except sqlite3.Error, e:
+		logging.getLoggger().severe("Database cannot be found or created. Error Message: %s. Cannot continue, quiting." % e)
+
+		#TODO a more graceful exit.
+		sys.exit(1)
+
+	handler.start()
+
 def connect():
-	return c
+    return handler

@@ -1,1 +1,85 @@
+# -*- coding: utf-8 -*-
 <%inherit file="/main.tmp.htm" />
+
+<script type="text/javascript">
+
+	$(function() {
+	   $("#settings_form").submit(function() {
+	        // post the form values via AJAX
+
+	        var postdata = {
+		    	host: $("#host").val(),
+		    	port: $("#port").val(),
+		    	username: $("#username").val(),
+				password: $("#password").val(),
+				is_ssl: $("#is_ssl").val(),
+				groups: $.map($("#group_check:checked"), function(element, index) {        	
+	        				return $(element).val().split(' ')[0]
+						}).join(',')
+			};
+
+	        $.post('/settings/save', postdata, function(data) {
+	            // and set the title with the result
+	            alert(data)
+	            $("#title").html(data);
+	           });
+	        return false ;
+	    });
+
+	    $("#load_button").click(function() {        	
+	    	$('#load_button').attr('disabled', 'disabled');
+
+	    	var postdata = {
+	    		host: $("#host").val(),
+	    		port: $("#port").val(),
+	    		username: $("#username").val(),
+				password: $("#password").val(),
+				is_ssl: $("#is_ssl").val()
+			};
+
+			function poll() {
+	        	$.ajax({
+		        	url: '/groups/list',
+		        	data: postdata,
+		        	type: 'post',
+		        	datatype: 'text',
+		        	beforeSend: function() {
+		        		$('#load_button').attr('disabled', 'disabled');	
+		        		$('#group_list').empty();        		
+		        	},
+		        	success: function(data) {
+		        		if (data == "working") {
+		        			window.setTimeout(poll, 2000);
+		        		} else{
+		        			$.each(data.split("\n"), function(index, value) {
+		        				$('#group_list').append('<input type="checkbox" id="group_check" value="' + value + '">' + value + '<br />');
+							});
+		        						
+		        			$('#load_button').removeAttr('disabled');
+		        		}
+		        	},
+		        	error: function(jqXHR, textStatus, errorThrown) {
+		        		$('#group_list').empty().append(errorThrown);
+		        		$('#load_button').removeAttr('disabled');
+		        	},
+		        	complete: function() {}
+
+		        });
+		    }
+
+		    poll();
+	    });
+	});
+</script>
+
+<form id="settings_form" action="#" method="post">
+	<label>Hostname:</label> <input type="text" id="host" /><br />
+	<label>Port:</label> <input type="text" id="port" /><br />
+	<label>SSL?:</label> <input type="checkbox" id="is_ssl" /><br />
+	<label>Username:</label> <input type="text" id="username" /><br />
+	<label>Password:</label> <input type="password" id="password" /><br />
+
+	<input type="button" id="load_button" value="Click to update available groups" />
+	<div id="group_list">&nbsp;</div>
+	<input type="submit" value="Save" />
+</form>
