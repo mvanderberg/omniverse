@@ -45,8 +45,6 @@ def get(section, option):
 # parses the group name/last message id pairing
 # ie, "(rec.anime:3100)" -> ("rec.anime" : "3100")
 def group_parse(group_option):
-	print tuple(group_option[1:-1].split(':'))
-
 	return tuple(group_option[1:-1].split(':'))
 
 def set(section, option, value):
