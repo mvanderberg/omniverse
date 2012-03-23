@@ -10,7 +10,7 @@ from omniverse import ArticleProducer
 
 def init_setting(option, section = "NNTP"):
     try:
-        return settings.get(section, option)
+        return settings.get(section + ":" + option)
     except (settings.NoSectionError, settings.NoOptionError), error:
         return ""
 
@@ -22,7 +22,7 @@ class SettingsPages:
         groups = []
         while 1:
             try:
-                (group, last) = settings.group_parse(settings.get("NNTP", "server.0.group.%d" % len(groups)))
+                (group, last) = settings.group_parse(settings.get("NNTP:server.0.group.%d" % len(groups)))
                 groups.append(group)
             except settings.NoOptionError, e:
                 break
@@ -50,18 +50,20 @@ class SettingsPages:
 
         print groups
 
-        settings.set("NNTP", "server.0.host", host)
-        settings.set("NNTP", "server.0.port", port)
-        settings.set("NNTP", "server.0.is_ssl", is_ssl)
-        settings.set("NNTP", "server.0.username", username)
-        settings.set("NNTP", "server.0.password", password)
+        settings.set("NNTP:server.0.host", host)
+        settings.set("NNTP:server.0.port", port)
+        settings.set("NNTP:server.0.is_ssl", is_ssl)
+        settings.set("NNTP:server.0.username", username)
+        settings.set("NNTP:server.0.password", password)
 
         old_group_values = {}
 
         idx = 0
         while 1:
             try: 
-                (group, last) = settings.group_parse(settings.get("NNTP", "server.0.group.%d" % idx))
+                (group, last) = settings.group_parse(settings.get("NNTP:server.0.group.%d" % idx))
+                settings.remove("NNTP:server.0.group.%d" % idx)
+                
                 old_group_values[group] = last
                 idx += 1
             except settings.NoOptionError, e:
@@ -69,9 +71,9 @@ class SettingsPages:
 
         if len(groups) > 0:
             for idx, group in zip(range(len(groups)), groups):
-                settings.set("NNTP", "server.0.group.%d" % idx, "(%s:%s)" % (group, old_group_values.get(group, "0")))
+                settings.set("NNTP:server.0.group.%d" % idx, "(%s:%s)" % (group, old_group_values.get(group, "0")))
         
-        settings.set("NNTP", "server.0.enabled", 1)
+        settings.set("NNTP:server.0.enabled", 1)
         return "success"
 
 class GroupWorker(threading.Thread):

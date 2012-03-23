@@ -13,7 +13,7 @@
 		    	username: $("#username").val(),
 				password: $("#password").val(),
 				is_ssl: $("#is_ssl").val(),
-				groups: $.map($("#group_check:checked"), function(element, index) {        	
+				groups: $.map($(".group_check:checked"), function(element, index) {        	
 	        				return $(element).val().split(' ')[0]
 						}).join(',')
 			};

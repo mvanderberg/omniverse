@@ -264,12 +264,12 @@ class ArticleProducer(threads.MyThread):
 		while not self.CANCEL:
 
 			try:
-				enabled = settings.get("NNTP", "server.%d.enabled" % server_index) == "1"
-				host = settings.get("NNTP", "server.%d.host" % server_index)
-				port = int(settings.get("NNTP", "server.%d.port" % server_index))
-				username = settings.get("NNTP", "server.%d.username" % server_index)
-				password = settings.get("NNTP", "server.%d.password" % server_index)
-				is_ssl = settings.get("NNTP", "server.%d.is_ssl" % server_index) == "1"
+				enabled =  settings.get("NNTP:server.%d.enabled" % server_index) == "1"
+				host =     settings.get("NNTP:server.%d.host" % server_index)
+				port = int(settings.get("NNTP:server.%d.port" % server_index))
+				username = settings.get("NNTP:server.%d.username" % server_index)
+				password = settings.get("NNTP:server.%d.password" % server_index)
+				is_ssl =   settings.get("NNTP:server.%d.is_ssl" % server_index) == "1"
 			except settings.NoOptionError, e:
 				logging.getLogger().info("No more servers to process.")
 				if server_index == 0:
@@ -285,7 +285,7 @@ class ArticleProducer(threads.MyThread):
 				self.check_workload()
 
 				try:
-					(group, low) = settings.get("NNTP", "server.%d.group.%d" % (server_index, group_index))[1:-1].split(":")
+					(group, low) = settings.get("NNTP:server.%d.group.%d" % (server_index, group_index))[1:-1].split(":")
 				except settings.NoOptionError, e:
 					logging.getLogger().info("No more groups to process for this server.")
 					break
@@ -344,7 +344,7 @@ class ArticleProducer(threads.MyThread):
 													threads.LockedIterator(itertools.izip(subjects, froms, message_ids, dates, lines)))
 				self.headers_size += len(subjects)
 
-				settings.set("NNTP", "server.%d.group.%d" % (server_index, group_index), "(%s:%d)" % (group, high + 1) )
+				settings.set("NNTP:server.%d.group.%d" % (server_index, group_index), "(%s:%d)" % (group, high + 1) )
 
 				if high + 1 >= last:
 					logging.getLogger().info("%s is up to date." % group)
