@@ -1,4 +1,3 @@
-
 ## Python Standard Library
 import nntplib
 import datetime
@@ -10,7 +9,6 @@ import logging.handlers
 import sys
 import itertools
 import ssl
-import ConfigParser
 import re
 import ssl
 import os
@@ -27,6 +25,7 @@ import db
 import parse
 import web
 import threads
+import settings
 
 
 ## File manipulation functions
@@ -45,37 +44,6 @@ def create_child_dir(dirname):
 # creates a path to a file resource relative to the current working directory
 def build_path(*args):
 	return os.path.join(os.path.abspath("."), *args)
-
-## Configuration manager
-## TODO: refactor this into a seperate module or class.
-_config = None
-def config():
-
-	global _config
-
-	if _config is None:
-		_config = ConfigParser.SafeConfigParser()
-		_config.read('config.ini')
-
-		if not _config.has_section("NNTP"):
-			_config.add_section("NNTP")
-			_config.set("NNTP", "server.0.enabled", "1")
-			_config.set("NNTP", "server.0.host", "none.nowhere.com")
-			_config.set("NNTP", "server.0.port", "443")
-			_config.set("NNTP", "server.0.username", "your_username")
-			_config.set("NNTP", "server.0.password", "your_password")
-			_config.set("NNTP", "server.0.ssl", "1")
-			_config.set("NNTP", "server.0.group.0", "(alt.binaries.comics:0)")
-			_config.set("NNTP", "server.0.group.1", "(alt.binaries.comics.reposts:0)")
-
-			with open(build_path('config.ini'), 'wb') as configfile:
-			    _config.write(configfile)
-
-			print "*** Update config.ini file with your information and re-execute omniverse."
-			sys.exit(1)
-	return _config
-			
-config()
 
 def datetime_to_seconds(date):
 
@@ -269,20 +237,24 @@ class ArticleProducer(threads.MyThread):
 				nntplib.NNTPError,
 				nntplib.NNTPProtocolError), error:
 
+			
 			logging.getLogger().error("NNTPError. Server response: %s" % error.message)
 
-			if error.message.startswith("502"):
-				logging.getLogger().error("Your per-user connection limit reached. Perhaps too many connections are being used by a program such as SABNZBD?")
+			if retry == 0:
+				raise IOError(error)
 			else:
-				logging.getLogger().error("NNTPPermanentError: %s" % msg)
-			self.ev.wait(60)
-			logging.getLogger().info("Retrying connection.")
-			return self.connect(host, port, username, password, is_ssl, retry - 1)
-		except IOError, msg:
-			logging.getLogger().error("Socket Error: %s" % msg)
-			self.ev.wait(60)
-			logging.getLogger().info("Retrying connection.")
-			return self.connect(host, port, username, password, is_ssl, retry - 1)
+				self.ev.wait(60)
+				logging.getLogger().info("Retrying connection.")
+				return self.connect(host, port, username, password, is_ssl, retry - 1)
+			
+		except IOError, error:
+			if retry == 0:
+				raise error
+			else:
+				logging.getLogger().error("Socket Error: %s" % str(error))
+				self.ev.wait(60)
+				logging.getLogger().info("Retrying connection.")
+				return self.connect(host, port, username, password, is_ssl, retry - 1)
 		
 	def run(self):
 
@@ -292,18 +264,19 @@ class ArticleProducer(threads.MyThread):
 		while not self.CANCEL:
 
 			try:
-				enabled = config().get("NNTP", "server.%d.enabled" % server_index) == "1"
-				host = config().get("NNTP", "server.%d.host" % server_index)
-				port = config().getint("NNTP", "server.%d.port" % server_index)
-				username = config().get("NNTP", "server.%d.username" % server_index)
-				password = config().get("NNTP", "server.%d.password" % server_index)
-				is_ssl = config().get("NNTP", "server.%d.ssl" % server_index) == "1"
-			except ConfigParser.NoOptionError, e:
+				enabled =  settings.get("NNTP:server.%d.enabled" % server_index) == "1"
+				host =     settings.get("NNTP:server.%d.host" % server_index)
+				port = int(settings.get("NNTP:server.%d.port" % server_index))
+				username = settings.get("NNTP:server.%d.username" % server_index)
+				password = settings.get("NNTP:server.%d.password" % server_index)
+				is_ssl =   settings.get("NNTP:server.%d.is_ssl" % server_index) == "1"
+			except settings.NoOptionError, e:
 				logging.getLogger().info("No more servers to process.")
+				if server_index == 0:
+					logging.getLogger().error("No server information configured. Use web interface to configure.")
 				break
-			except ConfigParser.NoSectionError, e:
-				logging.getLogger().info("No server information setup. Use web interface to configure.")
-				break
+			except ValueError, e:
+				logging.getLogger().error("Invalid port value.")
 
 			group_index = 0
 
@@ -312,8 +285,8 @@ class ArticleProducer(threads.MyThread):
 				self.check_workload()
 
 				try:
-					(group, low) = config().get("NNTP", "server.%d.group.%d" % (server_index, group_index))[1:-1].split(":")
-				except ConfigParser.NoOptionError, e:
+					(group, low) = settings.get("NNTP:server.%d.group.%d" % (server_index, group_index))[1:-1].split(":")
+				except settings.NoOptionError, e:
 					logging.getLogger().info("No more groups to process for this server.")
 					break
 
@@ -371,7 +344,7 @@ class ArticleProducer(threads.MyThread):
 													threads.LockedIterator(itertools.izip(subjects, froms, message_ids, dates, lines)))
 				self.headers_size += len(subjects)
 
-				config().set("NNTP", "server.%d.group.%d" % (server_index, group_index), "(%s:%d)" % (group, high + 1) )
+				settings.set("NNTP:server.%d.group.%d" % (server_index, group_index), "(%s:%d)" % (group, high + 1) )
 
 				if high + 1 >= last:
 					logging.getLogger().info("%s is up to date." % group)
@@ -460,6 +433,8 @@ class File:
 
 def startup():
 
+	settings.load('settings.ini')
+
 	db.setup()
 
 	logging.getLogger().info("Checking database integrity.")
@@ -483,8 +458,7 @@ def shutdown():
 
 	cherrypy.engine.exit()
 
-	with open(build_path('config.ini'), "wb") as configfile:
-		config().write(configfile)
+	settings.save('settings.ini')
 
 def start_article_download():
 

@@ -2,18 +2,79 @@ import cherrypy
 import db
 import logging
 import threading
+import json
+
+import settings
 
 from omniverse import ArticleProducer
+
+def init_setting(option, section = "NNTP"):
+    try:
+        return settings.get(section + ":" + option)
+    except (settings.NoSectionError, settings.NoOptionError), error:
+        return ""
 
 class SettingsPages:
 
     @cherrypy.expose
-    def index(self, username=""):
-        return load_template('./html/settings.tmp.htm').render()
+    def index(self):
+
+        groups = []
+        while 1:
+            try:
+                (group, last) = settings.group_parse(settings.get("NNTP:server.0.group.%d" % len(groups)))
+                groups.append(group)
+            except settings.NoOptionError, e:
+                break
+
+        data= {
+            "host" : init_setting("server.0.host"),
+            "port" : init_setting("server.0.port"),
+            "is_ssl" : "checked" if init_setting("server.0.is_ssl") else "",
+            "username" : init_setting("server.0.username"),
+            "password" : init_setting("server.0.password"),
+            "groups" : groups
+        }
+        
+        return load_template('./html/settings.tmp.htm').render(**data)
 
     @cherrypy.expose
     def save(self, **kwargs):
-       return str(repr(kwargs))
+ 
+        host = kwargs['host']
+        port = kwargs['port']
+        is_ssl = 1 if kwargs['is_ssl'] == "checked" else 0
+        username = kwargs['username']
+        password = kwargs['password']
+        groups = kwargs['groups'].split(',')
+
+        print groups
+
+        settings.set("NNTP:server.0.host", host)
+        settings.set("NNTP:server.0.port", port)
+        settings.set("NNTP:server.0.is_ssl", is_ssl)
+        settings.set("NNTP:server.0.username", username)
+        settings.set("NNTP:server.0.password", password)
+
+        old_group_values = {}
+
+        idx = 0
+        while 1:
+            try: 
+                (group, last) = settings.group_parse(settings.get("NNTP:server.0.group.%d" % idx))
+                settings.remove("NNTP:server.0.group.%d" % idx)
+                
+                old_group_values[group] = last
+                idx += 1
+            except settings.NoOptionError, e:
+                break
+
+        if len(groups) > 0:
+            for idx, group in zip(range(len(groups)), groups):
+                settings.set("NNTP:server.0.group.%d" % idx, "(%s:%s)" % (group, old_group_values.get(group, "0")))
+        
+        settings.set("NNTP:server.0.enabled", 1)
+        return "success"
 
 class GroupWorker(threading.Thread):
 
@@ -40,24 +101,32 @@ class GroupPages:
 
         uid = (host, port, is_ssl, username, password, keyword)
 
+        cherrypy.response.headers['Content-type'] = 'application/json'
+
         try:
             worker = self._workers[uid]
             if worker.groups is not None:
-                return "\n".join(worker.groups) or "No newsgroups found."
-            return "working"
+                if len(worker.groups) > 0:
+                    return json.dumps({'status' : 'done', 'result' : worker.groups})
+                else:
+                    return json.dumps({'status' : 'error', 'result' : 'No Newsgroups Found.'})
+
+            return json.dumps({'status' : 'working', 'result' : '' })
 
         except KeyError, e:
             try:
                 port = int(port)
             except ValueError, e:
-                raise cherrypy.HTTPError("500 Internal Server Error", "Invalid port.")
+                return json.dumps({'status' : 'error', 'result' : "Settings Error: Invalid Port."})
 
-            conn = ArticleProducer().connect(host=host, port=port, is_ssl=is_ssl, username=username, password=password, retry=0)
-            if conn is None:
-                raise cherrypy.HTTPError("500 Internal Server Error", "Failed to connect to %s." % host)
+            try:
+                conn = ArticleProducer().connect(host=host, port=port, is_ssl=is_ssl, username=username, password=password, retry=0)
+            except IOError, e:
+                return json.dumps({'status' : 'error', 'result' : 'Settings Error: %s' % str(e)})
+
             self._workers[uid] = GroupWorker(conn, keyword)
             self._workers[uid].start()
-            return "working"
+            return json.dumps({'status' : 'working', 'result' : '' })
 
 class RootPages:
 

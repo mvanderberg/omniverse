@@ -13,7 +13,7 @@
 		    	username: $("#username").val(),
 				password: $("#password").val(),
 				is_ssl: $("#is_ssl").val(),
-				groups: $.map($("#group_check:checked"), function(element, index) {        	
+				groups: $.map($(".group_check:checked"), function(element, index) {        	
 	        				return $(element).val().split(' ')[0]
 						}).join(',')
 			};
@@ -42,24 +42,38 @@
 		        	url: '/groups/list',
 		        	data: postdata,
 		        	type: 'post',
-		        	datatype: 'text',
+		        	datatype: 'json',
 		        	beforeSend: function() {
-		        		$('#load_button').attr('disabled', 'disabled');	
-		        		$('#group_list').empty();        		
+		        		$('#load_button').attr('disabled', 'disabled');
+		        		$('#error').empty();        		
 		        	},
 		        	success: function(data) {
-		        		if (data == "working") {
+		        		if (data['status'] == "working") {
 		        			window.setTimeout(poll, 2000);
-		        		} else{
-		        			$.each(data.split("\n"), function(index, value) {
-		        				$('#group_list').append('<input type="checkbox" id="group_check" value="' + value + '">' + value + '<br />');
+		        		} else if (data['status'] == "error") {
+		        			$('#error').empty().append(data['result']);
+		        			$('#load_button').removeAttr('disabled');		
+						} else {
+
+							old = $(".group_check:checked").clone()
+							$("#group_list").empty()
+
+		        			$.each(data['result'], function(index, value) {
+		        				$('#group_list').append('<input type="checkbox" class="group_check" value="' + value + '">' + value + '<br />');
+							});
+
+							$.each(old, function(index, value) {
+								
+								old_group = $(value).val();
+								$('.group_check[value*="' + old_group + '"]').attr('checked', 'checked')
+								
 							});
 		        						
 		        			$('#load_button').removeAttr('disabled');
 		        		}
 		        	},
 		        	error: function(jqXHR, textStatus, errorThrown) {
-		        		$('#group_list').empty().append(errorThrown);
+		        		$('#error').empty().append(errorThrown);
 		        		$('#load_button').removeAttr('disabled');
 		        	},
 		        	complete: function() {}
@@ -73,13 +87,18 @@
 </script>
 
 <form id="settings_form" action="#" method="post">
-	<label>Hostname:</label> <input type="text" id="host" /><br />
-	<label>Port:</label> <input type="text" id="port" /><br />
-	<label>SSL?:</label> <input type="checkbox" id="is_ssl" /><br />
-	<label>Username:</label> <input type="text" id="username" /><br />
-	<label>Password:</label> <input type="password" id="password" /><br />
+	<label>Hostname:</label> <input type="text" id="host" value="${host}" /><br />
+	<label>Port:</label> <input type="text" id="port" value="${port}" /><br />
+	<label>SSL?:</label> <input type="checkbox" id="is_ssl" checked="${is_ssl}" /><br />
+	<label>Username:</label> <input type="text" id="username" value="${username}" /><br />
+	<label>Password:</label> <input type="password" id="password" value="${password}" /><br />
 
 	<input type="button" id="load_button" value="Click to update available groups" />
-	<div id="group_list">&nbsp;</div>
+	<div id="error">&nbsp;</div>
+	<div id="group_list">
+		% for group in groups:
+		<input type="checkbox" class="group_check" value="${group}" checked="checked">${group}<br />
+		% endfor
+	</div>
 	<input type="submit" value="Save" />
 </form>
