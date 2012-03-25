@@ -31,6 +31,9 @@ class MultiThreadOK(threads.MyThread):
             if req=='--commit--':
                 cnx.commit()
                 continue
+            
+            #logging.getLogger().info("DB: Executing " + repr(req) + " (" + repr(arg) + ")")
+            
             cursor.execute(req, arg)
             if res:
                 for rec in cursor:
@@ -67,17 +70,18 @@ def setup():
 				'total_parts INT, '
 				'complete TINYINT, '
 				'filename TEXT, '
+                'groups TEXT, '
 				'poster TEXT, '
 				'date_posted INT, '
 				'size INT, '
-				'yenc TINYINT)')
+				'yenc TINYINT)'
+        )
 
 		connection.execute(
-			'CREATE INDEX IF NOT EXISTS filename_asc ON articles (filename ASC)')	
+			'CREATE INDEX IF NOT EXISTS filename_asc ON articles (filename ASC)')
 
 	except sqlite3.Error, e:
-		logging.getLoggger().severe("Database cannot be found or created. Error Message: %s. Cannot continue, quiting." % e)
-
+		logging.getLogger().exception("Database cannot be found or created. Cannot continue, quiting.")
 		#TODO a more graceful exit.
 		sys.exit(1)
 

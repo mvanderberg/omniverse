@@ -12,7 +12,7 @@
 		    	port: $("#port").val(),
 		    	username: $("#username").val(),
 				password: $("#password").val(),
-				is_ssl: $("#is_ssl").val(),
+				is_ssl: ($("#is_ssl").is(':checked')) ? "checked" : "",
 				groups: $.map($(".group_check:checked"), function(element, index) {        	
 	        				return $(element).val().split(' ')[0]
 						}).join(',')
@@ -20,7 +20,6 @@
 
 	        $.post('/settings/save', postdata, function(data) {
 	            // and set the title with the result
-	            alert(data)
 	            $("#title").html(data);
 	           });
 	        return false ;
@@ -59,7 +58,7 @@
 							$("#group_list").empty()
 
 		        			$.each(data['result'], function(index, value) {
-		        				$('#group_list').append('<input type="checkbox" class="group_check" value="' + value + '">' + value + '<br />');
+		        				$('#group_list').append('<input type="checkbox" class="group_check" name="id[]" value="' + value + '">' + value + '<br />');
 							});
 
 							$.each(old, function(index, value) {
@@ -89,7 +88,11 @@
 <form id="settings_form" action="#" method="post">
 	<label>Hostname:</label> <input type="text" id="host" value="${host}" /><br />
 	<label>Port:</label> <input type="text" id="port" value="${port}" /><br />
+	% if is_ssl:
 	<label>SSL?:</label> <input type="checkbox" id="is_ssl" checked="${is_ssl}" /><br />
+	% else:
+	<label>SSL?:</label> <input type="checkbox" id="is_ssl" /><br />
+	%endif	
 	<label>Username:</label> <input type="text" id="username" value="${username}" /><br />
 	<label>Password:</label> <input type="password" id="password" value="${password}" /><br />
 
@@ -97,7 +100,7 @@
 	<div id="error">&nbsp;</div>
 	<div id="group_list">
 		% for group in groups:
-		<input type="checkbox" class="group_check" value="${group}" checked="checked">${group}<br />
+		<input type="checkbox" class="group_check" checked="checked" value="${group}">${group}<br />
 		% endfor
 	</div>
 	<input type="submit" value="Save" />

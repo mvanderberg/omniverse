@@ -3,12 +3,14 @@ import db
 import logging
 import threading
 import json
+import cgi
+import time
 
 import settings
 
 from omniverse import ArticleProducer
 
-def init_setting(option, section = "NNTP"):
+def get_setting(option, section = "NNTP"):
     try:
         return settings.get(section + ":" + option)
     except (settings.NoSectionError, settings.NoOptionError), error:
@@ -26,29 +28,27 @@ class SettingsPages:
                 groups.append(group)
             except settings.NoOptionError, e:
                 break
-
+        
         data= {
-            "host" : init_setting("server.0.host"),
-            "port" : init_setting("server.0.port"),
-            "is_ssl" : "checked" if init_setting("server.0.is_ssl") else "",
-            "username" : init_setting("server.0.username"),
-            "password" : init_setting("server.0.password"),
+            "host" : get_setting("server.0.host"),
+            "port" : get_setting("server.0.port"),
+            "is_ssl" : "checked" if get_setting("server.0.is_ssl") == "1" else "",
+            "username" : get_setting("server.0.username"),
+            "password" : get_setting("server.0.password"),
             "groups" : groups
         }
-        
         return load_template('./html/settings.tmp.htm').render(**data)
 
     @cherrypy.expose
     def save(self, **kwargs):
  
+        print kwargs['is_ssl']
         host = kwargs['host']
         port = kwargs['port']
-        is_ssl = 1 if kwargs['is_ssl'] == "checked" else 0
+        is_ssl = "1" if kwargs['is_ssl'] == "checked" else "0"
         username = kwargs['username']
         password = kwargs['password']
         groups = kwargs['groups'].split(',')
-
-        print groups
 
         settings.set("NNTP:server.0.host", host)
         settings.set("NNTP:server.0.port", port)
@@ -69,7 +69,7 @@ class SettingsPages:
             except settings.NoOptionError, e:
                 break
 
-        if len(groups) > 0:
+        if groups[0]:
             for idx, group in zip(range(len(groups)), groups):
                 settings.set("NNTP:server.0.group.%d" % idx, "(%s:%s)" % (group, old_group_values.get(group, "0")))
         
@@ -86,6 +86,7 @@ class GroupWorker(threading.Thread):
 
     def run(self):
         (resp, groups) = self.conn.list()
+        self.conn.quit()
         groups = [(group, int(last) - int(first)) for (group, last, first, flag) in groups if self.keyword in group]
         groups.sort(lambda x, y: y[1] - x[1])
         groups = ["%s (%d)" % (group, size) for (group, size) in groups]
@@ -128,11 +129,83 @@ class GroupPages:
             self._workers[uid].start()
             return json.dumps({'status' : 'working', 'result' : '' })
 
+class NzbPages:
+
+    @cherrypy.expose
+    def save(self, ids):
+
+        # nzb spec can be found here: http://docs.newzbin2.es/index.php/Newzbin:NZB_Specs
+        # refactor refactor refactor
+        
+        if type(ids) is not type([]):
+            ids = [ids]
+
+        print repr(ids)
+
+        nzb_filename = "omniverse_%d" % int(time.time())
+
+        cherrypy.response.headers['Content-type'] = 'application/xml+nzb'
+        cherrypy.response.headers['Content-disposition'] = 'attachment; filename="%s.nzb"' % nzb_filename
+        connection = db.connect()
+
+        pieces = []
+        pieces.append('<?xml version="1.0" encoding="iso-8859-1" ?>')
+        pieces.append('<!DOCTYPE nzb PUBLIC "-//newzBin//DTD NZB 1.1//EN" "http://www.newzbin.com/DTD/nzb/nzb-1.1.dtd">')
+        pieces.append('<nzb xmlns="http://www.newzbin.com/DTD/2003/nzb">')
+        pieces.append('<head>')
+        pieces.append('\t<meta type="title">%s</meta>' % nzb_filename)
+        pieces.append('\t<meta type="tag">Comics</meta>')
+        pieces.append('</head>')
+
+        if ids:
+            for _id in ids:
+                (rowid, subject, parts, total_parts, complete, 
+                    filename, groups, poster, date_posted, size, yenc) = connection.select(
+                        "SELECT rowid, subject, parts, total_parts, complete, filename, groups, poster, date_posted, size, yenc from articles WHERE rowid = ?", (_id,)).next()
+               
+                pieces.append('<file poster="%s" date="%d" subject="%s">' % (
+                    cgi.escape(poster, True), 
+                    date_posted, 
+                    cgi.escape(subject, True)))
+                
+                pieces.append('\t<groups>')
+                for group in groups.split(','):
+                    pieces.append('\t\t<group>%s</group>' % group.strip())
+                pieces.append('\t</groups>')
+
+                parts = eval(parts)
+                
+                pieces.append('\t<segments>')
+                for part in parts.keys():
+                    idx = parts[part]
+                    pieces.append('\t\t<segment bytes="%d" number="%s">%s</segment>' % (
+                        int(size) / int(total_parts),
+                        idx,
+                        part[1:-1]))
+                pieces.append('\t</segments>')
+
+
+                pieces.append('</file>')
+        pieces.append('</nzb>')
+
+        output = "\n".join(pieces)
+
+        try:
+            import xml.parsers.expat
+
+            parser = xml.parsers.expat.ParserCreate()
+            parser.Parse(output)
+        except Exception, e:
+            logging.getLogger().exception("Failed to parse nzb data.")
+
+        return output
+
 class RootPages:
 
     # child pages
     groups = GroupPages()
     settings = SettingsPages()
+    nzb = NzbPages()
 
     @cherrypy.expose
     def index(self, pg=1, sz=500, query=""):

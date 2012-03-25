@@ -92,9 +92,14 @@ class ArticleWorker(threads.MyThread):
 			try:
 				# each variable is a tuple containing the article number and the value. The list
 				# compression filters out the article numbers.
-				(subject, _from, message_id, date, lines) = [x[1] for x in self.parent.produce()]
-				subject = subject.strip()
-				if self.add_segment(subject, _from, message_id, date, lines):
+				(subject, _from, message_id, date, lines, group) = self.parent.produce()
+				subject = subject[1].strip()
+				_from = _from[1]
+				message_id = message_id[1]
+				date = date[1]
+				lines = lines[1]
+
+				if self.add_segment(subject, _from, message_id, date, lines, group):
 					self.count += 1
 
 				if self.count >= 2000:
@@ -117,7 +122,7 @@ class ArticleWorker(threads.MyThread):
 					logging.getLogger().info("Finished processing articles. Quitting.")
 					return
 
-	def add_segment(self, subject, _from, message_id, date, lines):
+	def add_segment(self, subject, _from, message_id, date, lines, group):
 
 		if parse.bad_filter(subject):
 			logging.getLogger().info("Looks Spammy: %s" % subject)
@@ -127,7 +132,9 @@ class ArticleWorker(threads.MyThread):
 			subject = utf_decode(subject)
 			_from = utf_decode(_from)
 			message_id = utf_decode(message_id)
+			group = utf_decode(group)
 		except UnicodeDecodeError, e:
+			logging.getLogger().exception()
 			return False
 
 		subject_similar = parse.subject_to_similar(subject)
@@ -139,10 +146,16 @@ class ArticleWorker(threads.MyThread):
 			logging.getLogger().info("\"" + subject + "\" is either a plain usenet post or a subject line that cannot be parsed correctly.")
 
 		else:
-			result = self.connection.select("SELECT rowid, parts, total_parts FROM articles WHERE subject=? LIMIT 1", (subject_similar,) )
+			result = self.connection.select("SELECT rowid, parts, total_parts, groups FROM articles WHERE subject=? LIMIT 1", (subject_similar,) )
 			
 			try:
-				(rowid, parts, total_parts) = result.next()
+				(rowid, parts, total_parts, groups) = result.next()
+
+				groups = groups.split(',')
+				
+				if group not in groups:
+					groups.append(group)
+					self.connection.execute("UPDATE articles SET groups=? WHERE rowid=?", (','.join(groups), rowid))
 
 				if message_id in parts:
 					return False
@@ -171,9 +184,9 @@ class ArticleWorker(threads.MyThread):
 				complete = 1 if len(parts.keys()) == int(total_parts) else 0
 
 				self.connection.execute("INSERT INTO articles " +
-					"(subject, parts, total_parts, complete, filename, poster, date_posted, size, yenc) " + 
-					"VALUES (?,?,?,?,?,?,?,?,?)", 
-					(subject_similar, str(parts), total_parts, complete, filename, poster, date_posted, size, yenc))			
+					"(subject, parts, total_parts, complete, filename, groups, poster, date_posted, size, yenc) " + 
+					"VALUES (?,?,?,?,?,?,?,?,?,?)", 
+					(subject_similar, str(parts), total_parts, complete, filename, group, poster, date_posted, size, yenc))			
 			return True
 
 
@@ -341,9 +354,8 @@ class ArticleProducer(threads.MyThread):
 				
 				# TODO this should be locked I'm sure...
 				self.headers = itertools.chain(self.headers, 
-													threads.LockedIterator(itertools.izip(subjects, froms, message_ids, dates, lines)))
+													threads.LockedIterator(itertools.izip(subjects, froms, message_ids, dates, lines, [group] * len(subjects))))
 				self.headers_size += len(subjects)
-
 				settings.set("NNTP:server.%d.group.%d" % (server_index, group_index), "(%s:%d)" % (group, high + 1) )
 
 				if high + 1 >= last:
@@ -360,76 +372,6 @@ class ArticleProducer(threads.MyThread):
 			t.start()
 		else:
 			logging.getLogger().info("ArticleProducer quitting.")
-
-
-class FileHandler:
-
-
-	def to_nzb(self, files):
-
-		if type(files) == type(""):
-			files = [files]
-	
-		pieces = []
-		pieces.append('<?xml version="1.0" encoding="iso-8859-1" ?>')
-		pieces.append('<!DOCTYPE nzb PUBLIC "-//newzBin//DTD NZB 1.1//EN" "http://www.newzbin.com/DTD/nzb/nzb-1.1.dtd">')
-		pieces.append('<nzb xmlns="http://www.newzbin.com/DTD/2003/nzb">')
-		pieces.append('<head>')
-		pieces.append('\t<meta type="title">%s</meta>\n' % f[0].info["filename"])
-		pieces.append('\t<meta type="tag">Comics</meta>')
-		pieces.append('</head>')
-
-		for f in files:
-			pieces.append(f.to_nzb())
-
-		pieces.append('</nzb>')
-
-		return "\n".join(pieces)
-
-	
-		
-
-	
-
-class File:
-
-	def __init__(self, _id, **kwargs):
-
-		self.info = kwargs
-		self.segments = {}
-
-
-	def is_complete(self):
-		return len(self.segments.keys()) == int(self.total_parts)
-
-	def to_nzb(self):
-
-		pieces = []
-
-		pieces.append('<file poster="%s" date="%d" subject="%s">' % (
-			self.info["from"], 
-			self.info["date"], 
-			cgi.escape(self.info["subject"], True)))
-
-		pieces.append('\t<groups>')
-		for group in self.info["newsgroups"].split(','):
-			pieces.append('\t\t<group>%s</group>' % group.strip())
-		pieces.append('\t</groups>')
-
-		pieces.append('\t<segments>')
-
-		parts = self.segments.keys()
-		parts.sort()
-		for part in parts:
-			pieces.append('\t\t<segment="%d" number="%s">%s</segment>' % (
-				int(self.info["size"]) / int(self.info["total_parts"]),
-				part,
-				self.segments[part]))
-		pieces.append('\t</segments>')
-
-		pieces.append('</file>')
-
-		return "\n".join(pieces)
 
 def startup():
 

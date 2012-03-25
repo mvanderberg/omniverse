@@ -53,7 +53,7 @@ def subject_to_similar(subject):
 	# my trick to subtitute right to left by reversing the string, make the substitution,
 	# then reverse back.
 	re.sub
-	return re_similar.sub(")\1/1(", subject[::-1], 1)[::-1]
+	return re_similar.sub(")/1(", subject[::-1], 1)[::-1]
 
 def bad_filter(text):
 	for r in re_bad:
