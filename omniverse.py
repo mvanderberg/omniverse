@@ -283,7 +283,7 @@ class ArticleProducer(threads.MyThread):
 				username = settings.get("NNTP:server.%d.username" % server_index)
 				password = settings.get("NNTP:server.%d.password" % server_index)
 				is_ssl =   settings.get("NNTP:server.%d.is_ssl" % server_index) == "1"
-			except settings.NoOptionError, e:
+			except (settings.NoOptionError, settings.NoSectionError), e:
 				logging.getLogger().info("No more servers to process.")
 				if server_index == 0:
 					logging.getLogger().error("No server information configured. Use web interface to configure.")
