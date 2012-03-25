@@ -26,7 +26,7 @@ class SettingsPages:
             try:
                 (group, last) = settings.group_parse(settings.get("NNTP:server.0.group.%d" % len(groups)))
                 groups.append(group)
-            except settings.NoOptionError, e:
+            except (settings.NoOptionError, settings.NoSectionError), e:
                 break
         
         data= {
