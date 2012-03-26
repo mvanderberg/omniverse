@@ -178,7 +178,7 @@ class NzbPages:
                     pieces.append('\t\t<segment bytes="%d" number="%s">%s</segment>' % (
                         int(size) / int(total_parts),
                         idx,
-                        part[1:-1]))
+                        cgi.escape(part[1:-1], True)))
                 pieces.append('\t</segments>')
 
 

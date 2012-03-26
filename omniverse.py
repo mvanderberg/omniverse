@@ -141,6 +141,14 @@ class ArticleWorker(threads.MyThread):
 		subject_similar = parse.subject_to_similar(subject)
 		part_num, total_parts = parse.subject_to_totals(subject)
 		filename = parse.subject_to_filename(subject)
+		yenc = 1 if parse.subject_to_yenc(subject) else 0
+		# UUENCODE: 45 bytes per line
+		# yEnc: 128 bytes per line
+		if yenc == 1:
+			size = int(lines) * 128
+		else:
+			size = int(lines) * 45
+
 
 		if not filename or not subject_similar or not total_parts:
 			# segment is not part of a file -- do not add
@@ -167,7 +175,7 @@ class ArticleWorker(threads.MyThread):
 
 				complete = 1 if len(parts.keys()) == int(total_parts) else 0
 
-				self.connection.execute("UPDATE articles SET parts=?, complete=? WHERE rowid=?", (str(parts), complete, rowid))
+				self.connection.execute("UPDATE articles SET parts=?, complete=?, size=size+? WHERE rowid=?", (str(parts), complete, size, rowid))
 			
 			except StopIteration, e:
 
@@ -180,8 +188,8 @@ class ArticleWorker(threads.MyThread):
 					logging.getLogger().error("Unable to parse %s because bad timestamp. Skipping." % subject)
 					return False
 
-				size = parse.subject_to_size(subject) or (int(lines) * .85)
-				yenc = 1 if parse.subject_to_yenc(subject) else 0
+				#size = parse.subject_to_size(subject) or (int(lines) * .85)
+				
 				complete = 1 if len(parts.keys()) == int(total_parts) else 0
 
 				self.connection.execute("INSERT INTO articles " +
