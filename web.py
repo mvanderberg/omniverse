@@ -42,7 +42,6 @@ class SettingsPages:
     @cherrypy.expose
     def save(self, **kwargs):
  
-        print kwargs['is_ssl']
         host = kwargs['host']
         port = kwargs['port']
         is_ssl = "1" if kwargs['is_ssl'] == "checked" else "0"
@@ -74,7 +73,7 @@ class SettingsPages:
                 settings.set("NNTP:server.0.group.%d" % idx, "(%s:%s)" % (group, old_group_values.get(group, "0")))
         
         settings.set("NNTP:server.0.enabled", 1)
-        return "success"
+        return "Settings Updated."
 
 class GroupWorker(threading.Thread):
 
@@ -139,8 +138,6 @@ class NzbPages:
         
         if type(ids) is not type([]):
             ids = [ids]
-
-        print repr(ids)
 
         nzb_filename = "omniverse_%d" % int(time.time())
 

@@ -7,6 +7,7 @@ import pickle
 import logging
 import logging.handlers
 import sys
+import getopt
 import itertools
 import ssl
 import re
@@ -417,6 +418,8 @@ def start_article_download():
 
 def main():
 
+	optlist, args = getopt.getopt(sys.argv[1:], '', ["host=", "port="])
+
 	global SIGNAL
 
 	startup()
@@ -427,13 +430,27 @@ def main():
 	t.start()
 	
 	config = {'/media':
-                {'tools.staticdir.on': True,
-                 'tools.staticdir.dir': build_path("html", "media"),
-                }
-             }
+				{'tools.staticdir.on': True,
+				 'tools.staticdir.dir': build_path("html", "media"),
+				}
+			 }
 
 	cherrypy.engine.autoreload.unsubscribe()
+
+	# default
 	cherrypy.server.socket_port = 8085
+	for option, value in optlist:
+		if option == "--host":
+			cherrypy.server.socket_host = value
+		elif option == "--port":
+			try:
+				cherrypy.server.socket_port = int(value)
+			except ValueError, e:
+				print e
+				cherrypy.server.socket_port = 8085
+		else:
+			print "Unknown options. Available options: --host=[ip address to bind interface to] --port=[port for interface to listen to]"
+
 	cherrypy.tree.mount(web.RootPages(), '/', config=config)
 	cherrypy.engine.start()
 
@@ -483,5 +500,5 @@ if __name__ == "__main__":
 		main()
 	except SystemExit, e:	
 		logging.getLogger().info("Shutting Down")
-    
+	
  
