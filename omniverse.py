@@ -225,7 +225,8 @@ class ArticleProducer(threads.MyThread):
 	# waits for a few seconds.
 	def check_workload(self):
 
-		while not self.cancel:
+		logging.getLogger().info("Checking workload. %d" % self.headers_size)
+		while not self.CANCEL:
 			if self.headers_size > int(self.CHUNK * 1.2):
 				logging.getLogger().info(
 					"Producer Thread has has too many articles (%d). Waiting for Worker to catch up." % self.headers_size)

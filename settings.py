@@ -27,7 +27,7 @@ def build_path(*args):
 	return os.path.join(os.path.abspath("."), *args)
 
 def load(filename):
-	_shared_settings.read(filename);
+	_shared_settings.read(build_path(filename));
 
 def save(filename):
 	with open(build_path(filename), "wb") as settingsfile:
