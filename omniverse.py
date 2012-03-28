@@ -53,7 +53,7 @@ def datetime_to_seconds(date):
 	try:		
 		date_obj = datetime.datetime.strptime(found, "%d %b %Y %H:%M:%S")
 	except ValueError, e:
-		logging.getLogger().error("Not able to parse date %s. Attempting alternate formats." % date)
+		logging.getLogger().exception("Not able to parse date %s. Attempting alternate formats." % date)
 		try:
 			date_obj = datetime.datetime.strptime(date, "%a, %d %b %Y %H:%M:%S %Z")
 		except ValueError, e:
@@ -67,7 +67,7 @@ def utf_decode(string_to_decode):
 	try:
 		return string_to_decode.decode('utf-8', 'replace')
 	except UnicodeDecodeError, e:
-		logging.getLogger().error("Unicode decode error while decoding %s. Error message: %s" % (repr(string_to_decode), str(e)))
+		logging.getLogger().exception("Unicode decode error while decoding %s. Error message: %s" % (repr(string_to_decode), str(e)))
 		raise e	
 
 class ArticleWorker(threads.MyThread):
@@ -112,7 +112,7 @@ class ArticleWorker(threads.MyThread):
 						self.connection.commit()
 						self.count = 0
 					except Exception, e: 
-						logging.getLogger().info("Can't commit: %s" % str(e))
+						logging.getLogger().exception("Can't commit: %s. Will retry." % str(e))
 						self.count -= 500
 
 			except StopIteration, e:
@@ -135,7 +135,7 @@ class ArticleWorker(threads.MyThread):
 			message_id = utf_decode(message_id)
 			group = utf_decode(group)
 		except UnicodeDecodeError, e:
-			logging.getLogger().exception()
+			logging.getLogger().exception("UnicodeDecodeError while trying to decode message_id %s" % message_id)
 			return False
 
 		subject_similar = parse.subject_to_similar(subject)
@@ -185,7 +185,7 @@ class ArticleWorker(threads.MyThread):
 				try:
 					date_posted = datetime_to_seconds(date)
 				except ValueError, e:
-					logging.getLogger().error("Unable to parse %s because bad timestamp. Skipping." % subject)
+					logging.getLogger().exception("Unable to parse %s because bad timestamp. Skipping." % subject)
 					return False
 
 				#size = parse.subject_to_size(subject) or (int(lines) * .85)
@@ -228,11 +228,11 @@ class ArticleProducer(threads.MyThread):
 		logging.getLogger().info("Checking workload. %d" % self.headers_size)
 		while not self.CANCEL:
 			if self.headers_size > int(self.CHUNK * 1.2):
-				logging.getLogger().info(
-					"Producer Thread has has too many articles (%d). Waiting for Worker to catch up." % self.headers_size)
+				#logging.getLogger().info(
+				#	"Producer Thread has has too many articles (%d). Waiting for Worker to catch up." % self.headers_size)
 				self.ev.wait(3)
 			else:
-				logging.getLogger().info("Producer Thread has %d articles waiting for processing." % self.headers_size)
+				#logging.getLogger().info("Producer Thread has %d articles waiting for processing." % self.headers_size)
 				break
 
 
@@ -261,7 +261,7 @@ class ArticleProducer(threads.MyThread):
 				nntplib.NNTPProtocolError), error:
 
 			
-			logging.getLogger().error("NNTPError. Server response: %s" % error.message)
+			logging.getLogger().exception("NNTPError. Server response: %s" % error.message)
 
 			if retry == 0:
 				raise IOError(error)
@@ -274,7 +274,7 @@ class ArticleProducer(threads.MyThread):
 			if retry == 0:
 				raise error
 			else:
-				logging.getLogger().error("Socket Error: %s" % str(error))
+				logging.getLogger().exception("Socket Error: %s" % str(error))
 				self.ev.wait(60)
 				logging.getLogger().info("Retrying connection.")
 				return self.connect(host, port, username, password, is_ssl, retry - 1)
@@ -299,7 +299,7 @@ class ArticleProducer(threads.MyThread):
 					logging.getLogger().error("No server information configured. Use web interface to configure.")
 				break
 			except ValueError, e:
-				logging.getLogger().error("Invalid port value.")
+				logging.getLogger().exception("Invalid port value.")
 
 			group_index = 0
 
@@ -318,7 +318,7 @@ class ArticleProducer(threads.MyThread):
 				try:
 					(response, count, first, last, name) = self.connection.group(group)
 				except nntplib.NNTPTemporaryError, e:
-					logging.getLogger().error("Failed to select group %s. Server response: %s" %
+					logging.getLogger().exception("Failed to select group %s. Server response: %s" %
 						(group, str(e)))
 					logging.getLogger().info("Skipping %s." % group)
 					group_index += 1
@@ -344,21 +344,21 @@ class ArticleProducer(threads.MyThread):
 					logging.debug("[%s: %09d - %09d (of: %09d), %s]" % (group, low, high, last, response))
 
 				except nntplib.NNTPTemporaryError, e:
-					logging.getLogger().error(
+					logging.getLogger().exception(
 						"Failed to retrieve articles %d through %d from %s. Server response: %s" % 
 						(low, high, group, str(e)))
 					continue
 				except nntplib.NNTPPermanentError, e:
-					logging.getLogger().error(
+					logging.getLogger().exception(
 						"Failed to retrieve articles %d through %d from %s. Server response: %s" % 
 						(low, high, group, str(e)))
 					continue
 				except ssl.SSLError, e:
-					logging.getLogger().error(
+					logging.getLogger().exception(
 						"Failure in communication from %s. Error message: %s" % (host, str(e)))
 					continue
 				except IOError, e:
-					logging.getLogger().error(
+					logging.getLogger().exception(
 						"Failure in reading or writing from %s. Error message: %s" % (host, str(e)))
 					continue
 				
@@ -455,7 +455,7 @@ def main():
 			try:
 				cherrypy.server.socket_port = int(value)
 			except ValueError, e:
-				print e
+				logging.getLogger().exception("Invalid port number %s. Defaulting to 8085" % port)
 				cherrypy.server.socket_port = 8085
 		else:
 			print "Unknown options. Available options: --host=[ip address to bind interface to] --port=[port for interface to listen to]"
