@@ -224,7 +224,7 @@ class RootPages:
             #current page number
             pg = max(1, int(pg))
         except ValueError:
-            logging.getLogger().except("Bad GET value.")
+            logging.getLogger().exception("Bad GET value.")
             sz = 500
             pg = 1
 
