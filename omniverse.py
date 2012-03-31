@@ -104,7 +104,7 @@ class ArticleWorker(threads.MyThread):
 					if self.add_segment(subject, _from, message_id, date, lines, group):
 						self.count += 1
 				except Exception, e:
-					logging.getLogger().exception("General failure while processing message. Subject: %s, From: %s, Message ID: %s, Date: %s, Lines: %s, Group: %g" % (subject, _from, message_id, date, lines, group))
+					logging.getLogger().exception("General failure while processing message. Subject: %s, From: %s, Message ID: %s, Date: %s, Lines: %s, Group: %s" % (subject, _from, message_id, date, lines, group))
 					
 				if self.count >= 2000:
 					logging.getLogger().info("Worker: Committing 2000 records.")
