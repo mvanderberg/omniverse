@@ -144,62 +144,65 @@ class ArticleWorker(threads.MyThread):
 		subject_similar = parse.subject_to_similar(subject)
 		part_num, total_parts = parse.subject_to_totals(subject)
 		filename = parse.subject_to_filename(subject)
+
+		if not filename or not subject_similar or not total_parts:
+			logging.getLogger().info("\"" + subject + "\" is either a plain usenet post or a subject line that cannot be parsed correctly.")
+			return False
+
 		yenc = 1 if parse.subject_to_yenc(subject) else 0
 		# UUENCODE: 45 bytes per line
 		# yEnc: 128 bytes per line
-		if yenc == 1:
-			size = int(lines) * 128
-		else:
-			size = int(lines) * 45
+		try:
+			if yenc == 1:
+				size = int(lines) * 128
+			else:
+				size = int(lines) * 45
+		except ValueError:
+			#occasionally the line info returned from the server will be no good
+			size = 0
 
+		result = self.connection.select("SELECT rowid, parts, total_parts, groups FROM articles WHERE subject=? LIMIT 1", (subject_similar,) )
+		
+		try:
+			(rowid, parts, total_parts, groups) = result.next()
 
-		if not filename or not subject_similar or not total_parts:
-			# segment is not part of a file -- do not add
-			logging.getLogger().info("\"" + subject + "\" is either a plain usenet post or a subject line that cannot be parsed correctly.")
-
-		else:
-			result = self.connection.select("SELECT rowid, parts, total_parts, groups FROM articles WHERE subject=? LIMIT 1", (subject_similar,) )
+			groups = groups.split(',')
 			
+			if group not in groups:
+				groups.append(group)
+				self.connection.execute("UPDATE articles SET groups=? WHERE rowid=?", (','.join(groups), rowid))
+
+			if message_id in parts:
+				return False
+				
+			parts = eval(parts)
+
+			parts[ message_id ] = part_num
+
+			complete = 1 if len(parts.keys()) == int(total_parts) else 0
+
+			self.connection.execute("UPDATE articles SET parts=?, complete=?, size=size+? WHERE rowid=?", (str(parts), complete, size, rowid))
+		
+		except StopIteration, e:
+
+			poster = _from
+			parts = { message_id : part_num }
+
 			try:
-				(rowid, parts, total_parts, groups) = result.next()
+				date_posted = datetime_to_seconds(date)
+			except ValueError, e:
+				logging.getLogger().exception("Unable to parse %s because bad timestamp. Skipping." % subject)
+				return False
 
-				groups = groups.split(',')
-				
-				if group not in groups:
-					groups.append(group)
-					self.connection.execute("UPDATE articles SET groups=? WHERE rowid=?", (','.join(groups), rowid))
-
-				if message_id in parts:
-					return False
-					
-				parts = eval(parts)
-
-				parts[ message_id ] = part_num
-
-				complete = 1 if len(parts.keys()) == int(total_parts) else 0
-
-				self.connection.execute("UPDATE articles SET parts=?, complete=?, size=size+? WHERE rowid=?", (str(parts), complete, size, rowid))
+			#size = parse.subject_to_size(subject) or (int(lines) * .85)
 			
-			except StopIteration, e:
+			complete = 1 if len(parts.keys()) == int(total_parts) else 0
 
-				poster = _from
-				parts = { message_id : part_num }
-
-				try:
-					date_posted = datetime_to_seconds(date)
-				except ValueError, e:
-					logging.getLogger().exception("Unable to parse %s because bad timestamp. Skipping." % subject)
-					return False
-
-				#size = parse.subject_to_size(subject) or (int(lines) * .85)
-				
-				complete = 1 if len(parts.keys()) == int(total_parts) else 0
-
-				self.connection.execute("INSERT INTO articles " +
-					"(subject, parts, total_parts, complete, filename, groups, poster, date_posted, size, yenc) " + 
-					"VALUES (?,?,?,?,?,?,?,?,?,?)", 
-					(subject_similar, str(parts), total_parts, complete, filename, group, poster, date_posted, size, yenc))			
-			return True
+			self.connection.execute("INSERT INTO articles " +
+				"(subject, parts, total_parts, complete, filename, groups, poster, date_posted, size, yenc) " + 
+				"VALUES (?,?,?,?,?,?,?,?,?,?)", 
+				(subject_similar, str(parts), total_parts, complete, filename, group, poster, date_posted, size, yenc))			
+		return True
 
 
 
