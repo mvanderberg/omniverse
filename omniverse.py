@@ -247,7 +247,7 @@ class ArticleProducer(threads.MyThread):
 		self.headers_size -= 1
 		return obj
 
-	def connect(self, host, port, username, password, is_ssl = None, retry = 5):
+	def connect(self, host, port, username, password, is_ssl = False, retry = 5):
 
 		if retry < 0: return None
 

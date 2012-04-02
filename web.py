@@ -99,6 +99,8 @@ class GroupPages:
     @cherrypy.expose
     def list(self, host, port, is_ssl, username, password, keyword="comics"):
 
+        is_ssl = is_ssl == "checked"
+
         uid = (host, port, is_ssl, username, password, keyword)
 
         cherrypy.response.headers['Content-type'] = 'application/json'
