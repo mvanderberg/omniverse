@@ -99,6 +99,8 @@ class GroupPages:
     @cherrypy.expose
     def list(self, host, port, is_ssl, username, password, keyword="comics"):
 
+        is_ssl = is_ssl == "checked"
+
         uid = (host, port, is_ssl, username, password, keyword)
 
         cherrypy.response.headers['Content-type'] = 'application/json'
@@ -231,7 +233,7 @@ class RootPages:
         connection = db.connect()
 
      	result_set = connection.select(
-            "SELECT rowid, * FROM articles WHERE filename LIKE ? ORDER BY filename LIMIT ? OFFSET ?", 
+            "SELECT rowid, * FROM articles WHERE filename LIKE ? ORDER BY alphanumeric(filename) LIMIT ? OFFSET ?", 
                 ("%" + query + "%", sz, (pg - 1) * sz))
 
         return load_template('./html/browse.tmp.htm').render(result_set = result_set, pg = pg, sz = sz, query = query)

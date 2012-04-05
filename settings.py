@@ -2,6 +2,7 @@
 
 import ConfigParser
 import os
+import logging
 
 # todo a little thread safety would help
 
@@ -30,9 +31,13 @@ def load(filename):
 	_shared_settings.read(build_path(filename));
 
 def save(filename):
-	with open(build_path(filename), "wb") as settingsfile:
-		_shared_settings.write(settingsfile)
-
+	logging.getLogger().info("Saving settings.")
+	try:
+		fobj = open(build_path(filename), "wb")
+		_shared_settings.write(fobj)
+	except IOErrror, e:
+		logging.getLogger().exception("Unable to save settings.")
+	
 def get(option):
 	(section, option) = option.split(":")
 	if _shared_settings.has_section(section):

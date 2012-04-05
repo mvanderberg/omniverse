@@ -9,53 +9,59 @@ import threads
 
 DB_FILE = "db\\headers.db"
 
+def sql_alphanumeric(s):
+	for idx in range(len(s)):
+		if s[idx].isalnum():
+			return s[idx:]
+
 class MultiThreadOK(threads.MyThread):
-    def __init__(self, db, autostart=False):
-        super(MultiThreadOK, self).__init__(name="Database Thread")
-        self.db=db
-        self.CANCEL = False
-        self.reqs=Queue.Queue()
-        if autostart:
-            self.start()
-    def run(self):
-        cnx = sqlite3.connect(self.db) 
-        cnx.text_factory = sqlite3.OptimizedUnicode
-        cursor = cnx.cursor()
-        while not self.CANCEL:
-            try:
-                req, arg, res = self.reqs.get(timeout=10)
-            except Queue.Empty:
-                continue
-                
-            if req=='--close--': break
-            if req=='--commit--':
-                cnx.commit()
-                continue
-            
-            #logging.getLogger().info("DB: Executing " + repr(req) + " (" + repr(arg) + ")")
-            
-            cursor.execute(req, arg)
-            if res:
-                for rec in cursor:
-                    res.put(rec)
-                res.put('--no more--')
-        cnx.close()
-    def cancel(self):
-        logging.getLogger().info("%s will finish canceling after processing approximately %d items." % (self.name, self.reqs.qsize()))
-        self.CANCEL = True
-    def execute(self, req, arg=None, res=None):
-        self.reqs.put((req, arg or tuple(), res))
-    def select(self, req, arg=None):
-        res=Queue.Queue()
-        self.execute(req, arg, res)
-        while True:
-            rec=res.get()
-            if rec=='--no more--': break
-            yield rec
-    def close(self):
-        self.execute('--close--')
-    def commit(self):
-        self.execute('--commit--')
+	def __init__(self, db, autostart=False):
+		super(MultiThreadOK, self).__init__(name="Database Thread")
+		self.db=db
+		self.CANCEL = False
+		self.reqs=Queue.Queue()
+		if autostart:
+			self.start()
+	def run(self):
+		cnx = sqlite3.connect(self.db) 
+		cnx.text_factory = sqlite3.OptimizedUnicode
+		cnx.create_function("alphanumeric", 1, sql_alphanumeric)
+		cursor = cnx.cursor()
+		while not self.CANCEL:
+			try:
+				req, arg, res = self.reqs.get(timeout=10)
+			except Queue.Empty:
+				continue
+				
+			if req=='--close--': break
+			if req=='--commit--':
+				cnx.commit()
+				continue
+			
+			#logging.getLogger().info("DB: Executing " + repr(req) + " (" + repr(arg) + ")")
+			
+			cursor.execute(req, arg)
+			if res:
+				for rec in cursor:
+					res.put(rec)
+				res.put('--no more--')
+		cnx.close()
+	def cancel(self):
+		logging.getLogger().info("%s will finish canceling after processing approximately %d items." % (self.name, self.reqs.qsize()))
+		self.CANCEL = True
+	def execute(self, req, arg=None, res=None):
+		self.reqs.put((req, arg or tuple(), res))
+	def select(self, req, arg=None):
+		res=Queue.Queue()
+		self.execute(req, arg, res)
+		while True:
+			rec=res.get()
+			if rec=='--no more--': break
+			yield rec
+	def close(self):
+		self.execute('--close--')
+	def commit(self):
+		self.execute('--commit--')
 
 handler = MultiThreadOK(DB_FILE)
 
@@ -70,12 +76,12 @@ def setup():
 				'total_parts INT, '
 				'complete TINYINT, '
 				'filename TEXT, '
-                'groups TEXT, '
+				'groups TEXT, '
 				'poster TEXT, '
 				'date_posted INT, '
 				'size INT, '
 				'yenc TINYINT)'
-        )
+		)
 
 		connection.execute(
 			'CREATE INDEX IF NOT EXISTS filename_asc ON articles (filename ASC)')
@@ -88,4 +94,4 @@ def setup():
 	handler.start()
 
 def connect():
-    return handler
+	return handler

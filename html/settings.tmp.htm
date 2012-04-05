@@ -33,7 +33,7 @@
 	    		port: $("#port").val(),
 	    		username: $("#username").val(),
 				password: $("#password").val(),
-				is_ssl: $("#is_ssl").val()
+				is_ssl: ($("#is_ssl").is(':checked')) ? "checked" : ""
 			};
 
 			function poll() {
