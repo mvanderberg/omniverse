@@ -233,7 +233,7 @@ class RootPages:
         connection = db.connect()
 
      	result_set = connection.select(
-            "SELECT rowid, * FROM articles WHERE filename LIKE ? ORDER BY filename LIMIT ? OFFSET ?", 
+            "SELECT rowid, * FROM articles WHERE filename LIKE ? ORDER BY alphanumeric(filename) LIMIT ? OFFSET ?", 
                 ("%" + query + "%", sz, (pg - 1) * sz))
 
         return load_template('./html/browse.tmp.htm').render(result_set = result_set, pg = pg, sz = sz, query = query)
