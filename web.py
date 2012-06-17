@@ -37,7 +37,7 @@ class SettingsPages:
             "password" : get_setting("server.0.password"),
             "groups" : groups
         }
-        return load_template('./html/settings.tmp.htm').render(**data)
+        return load_template('./html/settings.servers.tmp.htm').render(**data)
 
     @cherrypy.expose
     def save(self, **kwargs):
@@ -236,7 +236,7 @@ class RootPages:
             "SELECT rowid, * FROM articles WHERE filename LIKE ? ORDER BY alphanumeric(filename) LIMIT ? OFFSET ?", 
                 ("%" + query + "%", sz, (pg - 1) * sz))
 
-        return load_template('./html/browse.tmp.htm').render(result_set = result_set, pg = pg, sz = sz, query = query)
+        return load_template('./html/browse.raw.tmp.htm').render(result_set = result_set, pg = pg, sz = sz, query = query)
 
 def load_template(filename):
 

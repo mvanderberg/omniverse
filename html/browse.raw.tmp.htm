@@ -1,0 +1,117 @@
+# -*- coding: utf-8 -*-
+<%inherit file="/main.tmp.htm" />
+
+<link rel="stylesheet" media="screen" href="/media/css/html.browse.css">
+
+<!--#################################################-->
+<!--################Search Box#######################-->
+<form action="browse">
+	<input type="text" name="query" /> <input type="submit" class="submit" value="Search" />
+</form>
+
+<!--#################################################-->
+<!--##################Top page listing###############-->
+<div>
+% for page in range(pg, pg+11):
+	<a href="?pg=${page}&sz=${sz}&query=${query}">${page}</a>
+% endfor
+</div>
+<p></p>
+
+<!--#################################################-->
+<!--#####Loop to list all records on the page########-->
+<table style="width:100%; cursor:pointer;">
+    <tr>
+      <th>Filename</th>
+      <th>Size</th>
+    </tr>
+    % for result in result_set:
+        ${makerow(result)}
+    % endfor
+</table>
+<p></p>
+
+<!--#################################################-->
+<!--###############Bottom page listing###############-->
+<p></p>
+% for page in range(pg, pg+11):
+	<a href="?pg=${page}&sz=${sz}&query=${query}">${page}</a>
+% endfor
+
+<!--#################################################-->
+<!--###############Queue Divination##################-->
+<p></p>
+
+<form id="dlnzb_form" action="/nzb/save" method="get">
+<div id="downloadQueue"></div><p></p>
+<input type="submit" class="submit" id="dlnzb_button" value="Download">
+</form>
+
+
+<script type="text/javascript">
+	$(function() {
+		/*
+		$('dlnzb_button').click(function() {
+			ids = $('.message:checked').map(function(element, index) {
+				return $(element).val()
+			}).join(',');
+			$('<form action="/nzb/save" method="post"><input type="hidden" value="' + ids + '"/>').submit();
+		});
+		*/
+	});
+</script>
+
+<script type="text/javascript">
+function addRow(rowid, filename) {
+	var queue_id = document.getElementById('queue_id').value;
+	var el = document.createElement('div');
+    el.innerHTML = '<div onClick="deleteRow(' + rowid + ')" style="width:30px; float:left; margin-right:3em;"><ul id="icons" class="ui-widget ui-helper-clearfix"><li class="ui-state-default ui-corner-all"><span class="ui-icon ui-icon-circle-close"></span></li></ul></div>';
+	el.innerHTML =  el.innerHTML + filename + '<input type="hidden" class="message" name="ids" value="' + queue_id + '"><div class="clear"></div>';
+	el.id = rowid;
+	el.className += 'queue';
+    document.getElementById('downloadQueue').appendChild(el);
+}
+function deleteRow(rowid) {
+	var child = document.getElementById(rowid);
+	var parent = document.getElementById('downloadQueue');
+	parent.removeChild(child);
+}
+</script>
+
+<%def name="convert_bytes(bytes)">
+    <%
+        bytes = float(bytes)
+        if bytes >= 1099511627776:
+            terabytes = bytes / 1099511627776
+            size = '%.2fT' % terabytes
+        elif bytes >= 1073741824:
+            gigabytes = bytes / 1073741824
+            size = '%.2fG' % gigabytes
+        elif bytes >= 1048576:
+            megabytes = bytes / 1048576
+            size = '%.2fM' % megabytes
+        elif bytes >= 1024:
+            kilobytes = bytes / 1024
+            size = '%.2fK' % kilobytes
+        else:
+            size = '%.2fb' % bytes
+        return size
+    %>
+</%def>
+
+<%def name="makerow(result)">
+    <%
+        (rowid, subject, parts, total_parts, complete, filename, groups, poster, date_posted, size, yenc) = result
+    %>
+    % if complete != 1 or size <= 5242880 or filename.endswith("PAR2")or filename.endswith("par2"):
+    <tr style="display:none;">
+    % else:
+    <tr onclick="addRow('${rowid}', '${filename}'), this.style.backgroundColor='#FBFF38'" onMouseOver="this.style.backgroundColor='#E1EAFE'" onMouseOut="this.style.backgroundColor='transparent'">
+    % endif
+        <td>${filename}
+            <input type="hidden" class="message" name="queue_filename" value="${filename}">
+            <input type="hidden" class="message" id="queue_id" value="${rowid}">
+        </td>
+        <td class="floatRight">${convert_bytes(size)}</td>
+    </tr>
+</%def>
