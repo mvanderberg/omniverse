@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 <%inherit file="/main.tmp.htm" />
+
+<link rel="stylesheet" media="screen" href="/media/css/html.settings.css">
+
 <!--[if gte IE 9]>
   <style type="text/css">
     .gradient {
@@ -91,47 +94,6 @@
 	});
 </script>
 
-<!------------------------------------------------------------------------------------------------------------>
-<!-------------------------General settings to be placed into settings.general.tmp.htm------------------------>
-<!------------------------------------------------------------------------------------------------------------>
-<!------------------------------------------------------------------------------------------------------------>
-<!------------------------------------------------------------------------------------------------------------>
-<!------------------------------------------------------------------------------------------------------------>
-<h1 class="title">General</h1>
-<div id="config">
-<div id="config-content">
-
-<h5>All non-absolute folder locations are relative to</h5>
-
-<form id="settings_form" action="#" method="post">
-
-    <div id="config-components">
-    
-        <div id="core-component-group1" class="component-group clearfix">
-    
-            <div class="component-group-desc">
-                <h3>Series Defaults</h3>
-                <p>Default options that will be used when adding a new series.</p>
-                <p><b>All options can be overridden when adding the series.</b></p>
-            </div>
-			<fieldset class="component-group-list">
-                <div class="field-pair">
-                    <label class="nocheck clearfix" for="log_dir">
-                        <span class="component-title">Ignore Before</span>
-                        <span class="component-desc">Books published prior to this year will be ignored.</span>
-                        <input type="text" id="series_default_year" value="" size="35" maxlength="4" />
-                    </label>
-                </div>
-                <input type="submit" class="config_submitter submit" value="Save Changes" />
-            </fieldset>
-        </div><!-- /component-group1 //-->
-	</div>
-</form>
-</div>
-</div>
-<!------------------------------------------------------------------------------------------------------------>
-<!--------------------------------Server settings to be in settings.server.tmp.htm---------------------------->
-<!------------------------------------------------------------------------------------------------------------>
 <h1 class="title">Server</h1>
 <div id="config">
 <div id="config-content">

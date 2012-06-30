@@ -1,2 +1,121 @@
 # -*- coding: utf-8 -*-
 <%inherit file="/main.tmp.htm" />
+
+<link rel="stylesheet" media="screen" href="/media/css/html.settings.css">
+
+<script type="text/javascript">
+
+	$(function() {
+	   $("#settings_form").submit(function() {
+	        // post the form values via AJAX
+
+	        var postdata = {
+		    	host: $("#host").val(),
+		    	port: $("#port").val(),
+		    	username: $("#username").val(),
+				password: $("#password").val(),
+				is_ssl: ($("#is_ssl").is(':checked')) ? "checked" : "",
+				groups: $.map($(".group_check:checked"), function(element, index) {        	
+	        				return $(element).val().split(' ')[0]
+						}).join(',')
+			};
+
+	        $.post('/settings/save', postdata, function(data) {
+	            // and set the title with the result
+	            alert(data);
+	           });
+	        return false ;
+	    });
+
+	    $("#load_button").click(function() {        	
+	    	$('#load_button').attr('disabled', 'disabled');
+
+	    	var postdata = {
+	    		host: $("#host").val(),
+	    		port: $("#port").val(),
+	    		username: $("#username").val(),
+				password: $("#password").val(),
+				is_ssl: ($("#is_ssl").is(':checked')) ? "checked" : ""
+			};
+
+			function poll() {
+	        	$.ajax({
+		        	url: '/groups/list',
+		        	data: postdata,
+		        	type: 'post',
+		        	datatype: 'json',
+		        	beforeSend: function() {
+		        		$('#load_button').attr('disabled', 'disabled');
+		        		$('#error').empty();        		
+		        	},
+		        	success: function(data) {
+		        		if (data['status'] == "working") {
+		        			window.setTimeout(poll, 2000);
+		        		} else if (data['status'] == "error") {
+		        			$('#error').empty().append(data['result']);
+		        			$('#load_button').removeAttr('disabled');		
+						} else {
+
+							old = $(".group_check:checked").clone()
+							$("#group_list").empty()
+
+		        			$.each(data['result'], function(index, value) {
+		        				$('#group_list').append('<input type="checkbox" class="group_check" name="id[]" value="' + value + '">' + value + '<br />');
+							});
+
+							$.each(old, function(index, value) {
+								
+								old_group = $(value).val();
+								$('.group_check[value*="' + old_group + '"]').attr('checked', 'checked')
+								
+							});
+		        						
+		        			$('#load_button').removeAttr('disabled');
+		        		}
+		        	},
+		        	error: function(jqXHR, textStatus, errorThrown) {
+		        		$('#error').empty().append(errorThrown);
+		        		$('#load_button').removeAttr('disabled');
+		        	},
+		        	complete: function() {}
+
+		        });
+		    }
+
+		    poll();
+	    });
+	});
+</script>
+
+<h1 class="title">General</h1>
+<div id="config">
+<div id="config-content">
+
+<h5>All non-absolute folder locations are relative to</h5>
+
+<form id="settings_form" action="#" method="post">
+
+    <div id="config-components">
+    
+        <div id="core-component-group1" class="component-group clearfix">
+    
+            <div class="component-group-desc">
+                <h3>Series Defaults</h3>
+                <p>Default options that will be used when adding a new series.</p>
+                <p><b>All options can be overridden when adding the series.</b></p>
+            </div>
+			<fieldset class="component-group-list">
+                <div class="field-pair">
+                    <label class="nocheck clearfix" for="log_dir">
+                        <span class="component-title">Ignore Before</span>
+                        <span class="component-desc">Books published prior to this year will be ignored.</span>
+                        <input type="text" id="series_default_year" value="" size="35" maxlength="4" />
+                    </label>
+                </div>
+                <input type="submit" class="config_submitter submit" value="Save Changes" />
+            </fieldset>
+        </div><!-- /component-group1 //-->
+	</div>
+</form>
+</div>
+</div>

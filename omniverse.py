@@ -146,7 +146,7 @@ class ArticleWorker(threads.MyThread):
 		filename = parse.subject_to_filename(subject)
 
 		if not filename or not subject_similar or not total_parts:
-			logging.getLogger().info("\"" + subject + "\" is either a plain usenet post or a subject line that cannot be parsed correctly.")
+			logging.getLogger().info("\"" + subject[:10] + "\" is a plain post or subject line that cannot be parsed.")
 			return False
 
 		yenc = 1 if parse.subject_to_yenc(subject) else 0

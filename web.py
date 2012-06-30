@@ -16,7 +16,7 @@ def get_setting(option, section = "NNTP"):
     except (settings.NoSectionError, settings.NoOptionError), error:
         return ""
 
-class SettingsPages:
+class PagesSettingsServers:
 
     @cherrypy.expose
     def index(self):
@@ -203,13 +203,29 @@ class RootPages:
 
     # child pages
     groups = GroupPages()
-    settings = SettingsPages()
+    settingsServers = PagesSettingsServers()
     nzb = NzbPages()
 
     @cherrypy.expose
     def index(self, pg=1, sz=500, query=""):
-        return self.browse(pg, sz, query)
-
+        return self.browseRaw(pg, sz, query)
+		
+    @cherrypy.expose
+    def home(self):
+        return load_template('./html/home.listseries.tmp.htm').render()
+	
+    @cherrypy.expose
+    def settingsGeneral(self):
+        return load_template('./html/settings.general.tmp.htm').render()
+	
+    @cherrypy.expose
+    def downloading(self):
+        return load_template('./html/browse.download.tmp.htm').render()
+	
+    @cherrypy.expose
+    def addseries(self):
+        return load_template('./html/home.addseries.tmp.htm').render()
+	
     @cherrypy.expose
     def status(self):
         connection = db.connect()
@@ -217,7 +233,7 @@ class RootPages:
         return "Number of records: %d" % num_rows
 
     @cherrypy.expose
-    def browse(self, pg=1, sz=500, query=""):
+    def browseRaw(self, pg=1, sz=500, query=""):
 
         try:
             # size per page
@@ -237,7 +253,7 @@ class RootPages:
                 ("%" + query + "%", sz, (pg - 1) * sz))
 
         return load_template('./html/browse.raw.tmp.htm').render(result_set = result_set, pg = pg, sz = sz, query = query)
-
+		
 def load_template(filename):
 
     from mako.template import Template

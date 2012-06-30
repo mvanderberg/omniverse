@@ -1,2 +1,79 @@
 # -*- coding: utf-8 -*-
 <%inherit file="/main.tmp.htm" />
+
+<link rel="stylesheet" media="screen" href="/media/css/html.home.css">
+<link rel="stylesheet" media="screen" href="/media/css/tablesorter.css">
+
+<script type="text/javascript" charset="utf-8">
+$.tablesorter.addParser({
+    id: 'loadingNames',
+    is: function(s) {
+        return false;
+    },
+    format: function(s) {
+        if (s.indexOf('Loading...') == 0)
+            return s.replace('Loading...','000');
+        return (s || '').replace(/^(The|A)\s/i,'');
+    },
+    type: 'text'
+});
+
+$(document).ready(function(){ 
+
+    $("#seriesListTable:has(tbody tr)").tablesorter();
+
+});
+//-->
+</script>
+</head>
+<body>
+<table id="seriesListTable" class="sickbeardTable tablesorter" cellspacing="1" border="0" cellpadding="0">
+
+  <thead><tr><th class="nowrap" style="width:100px;">Year</th><th>Series</th><th>Publisher</th><th>Issues</th></tr></thead>
+  <tfoot>
+    <tr>
+      <th rowspan="1" colspan="1" align="center"><a href="/home/addShows/">Add Show</a></th>
+      <th rowspan="1" colspan="6"></th>
+    </tr>
+  </tfoot>
+  <tbody>
+
+  <tr>
+    <td align="center" class="nowrap">1999</td>
+    <td class="tvShow"><a href="/home/displaySeries?series=576">100 Bullets</a></td>
+    <td>Vertigo</td>
+    <td align="center"><span style="display: none;">61 / 93</span><div id="progressbar81500" style="position:relative;"></div>
+        <script type="text/javascript">
+        <!--
+            $(function() {
+               $("#progressbar81500").progressbar({
+                   value: parseInt(61) * 100 / parseInt(93)
+               });
+               $("#progressbar81500").append( "<div class='progressbarText'>61 / 93</div>" )
+            });
+        //-->
+        </script>
+    </td>
+  </tr>
+
+  <tr>
+    <td align="center" class="nowrap">1996</td>
+    <td class="tvShow"><a href="/home/displaySeries?series=4032">Teenage Mutant Ninja Turtles</a></td>
+    <td>Image</td>
+    <td align="center"><span style="display: none;">26 / 27</span><div id="progressbar155201" style="position:relative;"></div>
+        <script type="text/javascript">
+        <!--
+            $(function() {
+               $("#progressbar155201").progressbar({
+                   value: parseInt(26) * 100 / parseInt(27)
+               });
+               $("#progressbar155201").append( "<div class='progressbarText'>26 / 27</div>" )
+            });
+        //-->
+        </script>
+    </td>
+  </tr>
+
+
+</tbody>
+</table>
