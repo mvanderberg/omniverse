@@ -21,7 +21,8 @@ $.tablesorter.addParser({
 $(document).ready(function(){ 
 	//Sort by series title then year:
     $("#seriesListTable:has(tbody tr)").tablesorter({
-		sortList: [[1,0],[0,0]]
+		sortList: [[1,0],[0,0]],
+		widgets: ['zebra']
 	});
 
 });
@@ -29,9 +30,10 @@ $(document).ready(function(){
 </script>
 </head>
 <body>
-<table id="seriesListTable" class="sickbeardTable tablesorter" cellspacing="1" border="0" cellpadding="0">
+<h1 class="title">Series List</h1>
+<table id="seriesListTable" class="tablesorter" cellspacing="1" border="0" cellpadding="0">
 
-  <thead><tr><th class="nowrap" style="width:100px;">Year</th><th>Series</th><th>Publisher</th><th>Issues</th></tr></thead>
+  <thead><tr><th style="width:100px;">Year</th><th>Series</th><th>Publisher</th><th>Issues</th></tr></thead>
   <tfoot>
     <tr>
       <th rowspan="1" colspan="1" align="center"><a href="/home/addShows/">Add Show</a></th>
@@ -42,9 +44,9 @@ $(document).ready(function(){
 
   <tr>
     <td align="center" class="nowrap">1999</td>
-    <td class="tvShow"><a href="/home/displaySeries?series=576">100 Bullets</a></td>
+    <td class="series"><a href="/home/displaySeries?series=576">100 Bullets</a></td>
     <td>Vertigo</td>
-    <td align="center"><div id="progressbar81500" style="position:relative;"></div>
+    <td align="center"><div id="progressbar81500" style="position:relative; height:1.2em;"></div>
         <script type="text/javascript">
         <!--
             $(function() {
@@ -60,9 +62,9 @@ $(document).ready(function(){
 
   <tr>
     <td align="center" class="nowrap">2011</td>
-    <td class="tvShow"><a href="/home/displaySeries?series=33247">Teenage Mutant Ninja Turtles</a></td>
+    <td class="series"><a href="/home/displaySeries?series=33247">Teenage Mutant Ninja Turtles</a></td>
     <td>IDW</td>
-    <td align="center"><div id="progressbar155201" style="position:relative;"></div>
+    <td align="center"><div id="progressbar155201" style="position:relative; height:1.2em;"></div>
         <script type="text/javascript">
         <!--
             $(function() {
@@ -78,9 +80,9 @@ $(document).ready(function(){
 
   <tr>
     <td align="center" class="nowrap">1996</td>
-    <td class="tvShow"><a href="/home/displaySeries?series=4032">Teenage Mutant Ninja Turtles</a></td>
+    <td class="series"><a href="/home/displaySeries?series=4032">Teenage Mutant Ninja Turtles</a></td>
     <td>Image</td>
-    <td align="center"><div id="progressbar15520" style="position:relative;"></div>
+    <td align="center"><div id="progressbar15520" style="position:relative; height:1.2em;"></div>
         <script type="text/javascript">
         <!--
             $(function() {

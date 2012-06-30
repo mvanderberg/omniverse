@@ -11,3 +11,15 @@ overflow:visible;
 text-align:center;
 vertical-align: middle;
 }
+h1 {
+text-align:left;
+font-size:21px;
+line-height:23px;
+font-weight:400;
+}
+h1.title {
+padding-bottom:4px;
+margin-bottom:12px;
+border-bottom:1px solid #4e4e4e;
+}
+.nowrap { white-space: nowrap; }

@@ -1,23 +1,36 @@
 /* tables */
 table.tablesorter {
-	font-family:arial;
-	background-color: #CDCDCD;
-	margin:10px 0pt 15px;
-	font-size: 8pt;
 	width: 100%;
-	text-align: left;
+    margin-left:auto;
+    margin-right:auto;
+    text-align:left;
+    color: #000;
+    background-color: #fff;
+    border-spacing: 0;
 }
-table.tablesorter thead tr th, table.tablesorter tfoot tr th {
-	background-color: #e6EEEE;
-	border: 1px solid #FFF;
-	font-size: 8pt;
-	padding: 4px;
+table.tablesorter th,
+table.tablesorter td {
+    padding: 4px;
+    border-left: #fff 1px solid;
+    border-top: #fff 1px solid;
+}
+/* remove extra border from left edge */
+table.tablesorter th:first-child,
+table.tablesorter td:first-child {
+    border-left: none;
+}
+table.tablesorter th {
+    border-collapse: collapse;
+    background-color: #333;
+    color: #fff;
+    text-align: center;
 }
 table.tablesorter thead tr .header {
 	background-image: url(../images/tablesorter/bg.gif);
 	background-repeat: no-repeat;
 	background-position: center right;
 	cursor: pointer;
+    padding: 4px 18px 4px 4px;
 }
 table.tablesorter tbody td {
 	color: #3D3D3D;
@@ -25,9 +38,14 @@ table.tablesorter tbody td {
 	background-color: #FFF;
 	vertical-align: top;
 }
-table.tablesorter tbody tr.odd td {
-	background-color:#F0F0F6;
+/* Zebra Widget - row alternating colors */
+table.tablesorter tr.odd td {
+    background-color: #f5f1e4;
 }
+table.tablesorter tr.even td {
+    background-color: #dfdacf;
+}
+/* Sort images */
 table.tablesorter thead tr .headerSortUp {
 	background-image: url(../images/tablesorter/asc.gif);
 }
@@ -35,5 +53,14 @@ table.tablesorter thead tr .headerSortDown {
 	background-image: url(../images/tablesorter/desc.gif);
 }
 table.tablesorter thead tr .headerSortDown, table.tablesorter thead tr .headerSortUp {
-background-color: #8dbdd8;
+background-color: #57442B;
+}
+/*List series table styles*/
+td.series { font-weight: bold; }
+td.series a {text-decoration: none; font-size: 1.2em; }
+td.series:hover { background-color: #cfcfcf !important; cursor: pointer; }
+
+table.tablesorter tfoot a {
+    color:#fff;
+    text-decoration: none;
 }
