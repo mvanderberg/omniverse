@@ -19,8 +19,10 @@ $.tablesorter.addParser({
 });
 
 $(document).ready(function(){ 
-
-    $("#seriesListTable:has(tbody tr)").tablesorter();
+	//Sort by series title then year:
+    $("#seriesListTable:has(tbody tr)").tablesorter({
+		sortList: [[1,0],[0,0]]
+	});
 
 });
 //-->
@@ -42,7 +44,7 @@ $(document).ready(function(){
     <td align="center" class="nowrap">1999</td>
     <td class="tvShow"><a href="/home/displaySeries?series=576">100 Bullets</a></td>
     <td>Vertigo</td>
-    <td align="center"><span style="display: none;">61 / 93</span><div id="progressbar81500" style="position:relative;"></div>
+    <td align="center"><div id="progressbar81500" style="position:relative;"></div>
         <script type="text/javascript">
         <!--
             $(function() {
@@ -57,10 +59,10 @@ $(document).ready(function(){
   </tr>
 
   <tr>
-    <td align="center" class="nowrap">1996</td>
-    <td class="tvShow"><a href="/home/displaySeries?series=4032">Teenage Mutant Ninja Turtles</a></td>
-    <td>Image</td>
-    <td align="center"><span style="display: none;">26 / 27</span><div id="progressbar155201" style="position:relative;"></div>
+    <td align="center" class="nowrap">2011</td>
+    <td class="tvShow"><a href="/home/displaySeries?series=33247">Teenage Mutant Ninja Turtles</a></td>
+    <td>IDW</td>
+    <td align="center"><div id="progressbar155201" style="position:relative;"></div>
         <script type="text/javascript">
         <!--
             $(function() {
@@ -74,6 +76,24 @@ $(document).ready(function(){
     </td>
   </tr>
 
+  <tr>
+    <td align="center" class="nowrap">1996</td>
+    <td class="tvShow"><a href="/home/displaySeries?series=4032">Teenage Mutant Ninja Turtles</a></td>
+    <td>Image</td>
+    <td align="center"><div id="progressbar15520" style="position:relative;"></div>
+        <script type="text/javascript">
+        <!--
+            $(function() {
+               $("#progressbar15520").progressbar({
+                   value: parseInt(8) * 100 / parseInt(11)
+               });
+               $("#progressbar15520").append( "<div class='progressbarText'>8 / 11</div>" )
+            });
+        //-->
+        </script>
+    </td>
+  </tr>
 
+  
 </tbody>
 </table>
