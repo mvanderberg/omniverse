@@ -45,6 +45,12 @@ table.tablesorter tr.odd td {
 table.tablesorter tr.even td {
     background-color: #dfdacf;
 }
+table.tablesorter tr.odd td a {
+    color:#000;
+}
+table.tablesorter tr.even td a {
+    color:#000;
+}
 /* Sort images */
 table.tablesorter thead tr .headerSortUp {
 	background-image: url(../images/tablesorter/asc.gif);

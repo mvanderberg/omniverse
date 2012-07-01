@@ -67,7 +67,11 @@
     <span id="headerVersion">alpha build</span>
 	<ul id="mainNavigation" class="sf-menu">
     	<li>&nbsp;&nbsp;&nbsp;&nbsp;</li>
-        <li class="current">
+		% if tab == "home":
+        	<li class="current">
+		% else:
+        	<li>
+		% endif
             <a href="/home">Home</a>
             <ul>
                 <li>
@@ -78,7 +82,11 @@
                 </li>
             </ul>
         </li>
-        <li>
+		% if tab == "download":
+        	<li class="current">
+		% else:
+        	<li>
+		% endif
             <a href="/browseRaw">Download</a>
             <ul>
                 <li>
@@ -100,7 +108,11 @@
                 </li>
             </ul>
         </li>
-        <li>
+		% if tab == "options":
+        	<li class="current">
+		% else:
+        	<li>
+		% endif
             <a href="/settings">Options</a>
             <ul>
                 <li>
@@ -119,7 +131,7 @@
 
 <div id="mainSubNavigation">
     <span>
-    	<a href="#"><b>Menu Item 1</b></a> |
+    	<a href="#"><b>${tab}</b></a> |
         <a href="#"><b>Menu Item 2</b></a> |
         <a href="#"><b>Menu Item 3</b></a>
     </span>

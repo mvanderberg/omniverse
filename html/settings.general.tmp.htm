@@ -108,8 +108,34 @@
                 <div class="field-pair">
                     <label class="nocheck clearfix" for="log_dir">
                         <span class="component-title">Ignore Before</span>
-                        <span class="component-desc">Books published prior to this year will be ignored.</span>
-                        <input type="text" id="series_default_year" value="" size="35" maxlength="4" />
+                        <span class="component-desc">Books published before this year will be ignored.</span>
+                        <input type="text" id="series_default_beforeyear" value="" size="35" maxlength="4" />
+                    </label>
+                </div>
+                <div class="field-pair">
+                    <label class="nocheck clearfix" for="log_dir">
+                        <span class="component-title">Ignore After</span>
+                        <span class="component-desc">Books published after this year will be ignored.</span>
+                        <input type="text" id="series_default_afteryear" value="" size="35" maxlength="4" />
+                    </label>
+                </div>
+                <div class="field-pair">
+                    <label class="nocheck clearfix" for="log_dir">
+                        <span class="component-title">Temporary Download Directory</span>
+                        <input type="text" id="dir_temp" value="" size="35" maxlength="4" />
+                    </label>
+                </div>
+                <div class="field-pair">
+                    <label class="nocheck clearfix" for="log_dir">
+                        <span class="component-title">Scan Directory Interval</span>
+                        <input type="text" id="scan_interval" value="" size="35" maxlength="4" />
+                    </label>
+                </div>
+                <div class="field-pair">
+                    <label class="nocheck clearfix" for="log_dir">
+                        <span class="component-title">Processed Files Directory</span>
+                        <span class="component-desc">Books are stored here after processing.</span>
+                        <input type="text" id="dir_save" value="" size="35" maxlength="4" />
                     </label>
                 </div>
                 <input type="submit" class="config_submitter submit" value="Save Changes" />

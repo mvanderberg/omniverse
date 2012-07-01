@@ -35,7 +35,8 @@ class PagesSettingsServers:
             "is_ssl" : "checked" if get_setting("server.0.is_ssl") == "1" else "",
             "username" : get_setting("server.0.username"),
             "password" : get_setting("server.0.password"),
-            "groups" : groups
+            "groups" : groups,
+            "tab" : "options",
         }
         return load_template('./html/settings.servers.tmp.htm').render(**data)
 
@@ -212,19 +213,38 @@ class RootPages:
 		
     @cherrypy.expose
     def home(self):
-        return load_template('./html/home.listseries.tmp.htm').render()
+        infrastucture = {
+            "tab" : "home",
+        }
+        return load_template('./html/home.listseries.tmp.htm').render(**infrastucture)
 	
     @cherrypy.expose
     def settingsGeneral(self):
-        return load_template('./html/settings.general.tmp.htm').render()
+        """data= {
+            "series_default_beforeyear" : get_setting("general.series_default_beforeyear"),
+            "series_default_afteryear" : get_setting("general.series_default_afteryear"),
+            "dir_temp" : get_setting("general.dir_temp"),
+            "scan_interval" : get_setting("general.scan_interval"),
+            "dir_save" : get_setting("general.dir_save"),
+        }"""
+        infrastucture = {
+            "tab" : "options",
+        }
+        return load_template('./html/settings.general.tmp.htm').render(**infrastucture)
 	
     @cherrypy.expose
     def downloading(self):
-        return load_template('./html/browse.download.tmp.htm').render()
+        infrastucture = {
+            "tab" : "download",
+        }
+        return load_template('./html/browse.download.tmp.htm').render(**infrastucture)
 	
     @cherrypy.expose
     def addseries(self):
-        return load_template('./html/home.addseries.tmp.htm').render()
+        infrastucture = {
+            "tab" : "home",
+        }
+        return load_template('./html/home.addseries.tmp.htm').render(**infrastucture)
 	
     @cherrypy.expose
     def status(self):
@@ -234,7 +254,9 @@ class RootPages:
 
     @cherrypy.expose
     def browseRaw(self, pg=1, sz=500, query=""):
-
+        infrastucture = {
+            "tab" : "download",
+        }
         try:
             # size per page
             sz = max(500, int(sz)) 
@@ -252,7 +274,7 @@ class RootPages:
             "SELECT rowid, * FROM articles WHERE filename LIKE ? ORDER BY alphanumeric(filename) LIMIT ? OFFSET ?", 
                 ("%" + query + "%", sz, (pg - 1) * sz))
 
-        return load_template('./html/browse.raw.tmp.htm').render(result_set = result_set, pg = pg, sz = sz, query = query)
+        return load_template('./html/browse.raw.tmp.htm').render(result_set = result_set, pg = pg, sz = sz, query = query,**infrastucture)
 		
 def load_template(filename):
 
